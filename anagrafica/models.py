@@ -1519,7 +1519,7 @@ class Estensione(ModelloSemplice, ConMarcaTemporale, ConAutorizzazioni, ConPDF):
     def termina(self):
         self.appartenenza.fine = datetime.today()
         self.appartenenza.terminazione = Appartenenza.FINE_ESTENSIONE
-        self.attuale = 'n'
+        self.fine = poco_fa()
         self.save()
 
     def genera_pdf(self):
@@ -1536,7 +1536,7 @@ class Estensione(ModelloSemplice, ConMarcaTemporale, ConAutorizzazioni, ConPDF):
 
 
 class Riserva(ModelloSemplice, ConMarcaTemporale, ConStorico,
-              ConAutorizzazioni, ConPDF):
+              ConAutorizzazioni, ConPDF, ConProtocollo):
     """
     Rappresenta una pratica di riserva.
     Questa puo' essere in corso o meno.
@@ -1566,6 +1566,7 @@ class Riserva(ModelloSemplice, ConMarcaTemporale, ConStorico,
     def autorizzazione_concessa(self, modulo=None):
         self.protocollo_data = modulo.cleaned_data['protocollo_data']
         self.protocollo_numero = modulo.cleaned_data['protocollo_numero']
+        self.save()
 
 
     def invia_mail(self):

@@ -648,7 +648,7 @@ def utente_trasferimento(request, me):
                 },
                 mittente=None,
                 destinatari=[
-                    trasf.persona.destinazione.presidente()
+                    trasf.destinazione.presidente()
                 ]
             )
             Messaggio.costruisci_e_invia(
@@ -659,7 +659,7 @@ def utente_trasferimento(request, me):
                 },
                 mittente=None,
                 destinatari=[
-                    trasf.persona.sede_rifermento().presidente()
+                    trasf.persona.sede_riferimento().presidente()
                 ]
             )
 
