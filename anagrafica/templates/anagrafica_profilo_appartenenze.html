@@ -103,7 +103,7 @@
                             {% for e in app.estensioni.all %}
                                 {% if e.attuale and e.esito == e.ESITO_OK %}
 
-                                    <a href="/us/estensione/{{ r.pk }}/termina/"
+                                    <a href="/us/estensione/{{ e.pk }}/termina/"
                                    data-conferma="Vuoi veramente terminare l'estensione?">
                                     Termina Estensione
                                     </a>

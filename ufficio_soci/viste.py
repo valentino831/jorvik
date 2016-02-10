@@ -315,7 +315,7 @@ def us_estensioni(request, me):
 @pagina_privata(permessi=(GESTIONE_SOCI,))
 def us_estensione_termina(request, me, pk):
     estensione = get_object_or_404(Estensione, pk=pk)
-    if estensione not in me.oggetti_permesso(GESTIONE_SOCI):
+    if not me.permessi_almeno(estensione.persona, MODIFICA):
         return redirect(ERRORE_PERMESSI)
     else:
         estensione.termina()
