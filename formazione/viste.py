@@ -10,10 +10,11 @@ from anagrafica.permessi.costanti import GESTIONE_CORSI_SEDE, GESTIONE_CORSO, ER
 from autenticazione.funzioni import pagina_privata, pagina_pubblica
 from base.errori import ci_siamo_quasi, errore_generico, messaggio_generico
 from base.models import Log
+from base.utils import poco_fa
 from formazione.elenchi import ElencoPartecipantiCorsiBase
 from formazione.forms import ModuloCreazioneCorsoBase, ModuloModificaLezione, ModuloModificaCorsoBase, \
     ModuloIscrittiCorsoBaseAggiungi
-from formazione.models import CorsoBase, AssenzaCorsoBase, LezioneCorsoBase, PartecipazioneCorsoBase
+from formazione.models import CorsoBase, AssenzaCorsoBase, LezioneCorsoBase, PartecipazioneCorsoBase, Aspirante
 from django.utils import timezone
 
 from posta.models import Messaggio
@@ -41,6 +42,8 @@ def formazione_corsi_base_elenco(request, me):
 def formazione_corsi_base_domanda(request, me):
     contesto = {
         "sedi": me.oggetti_permesso(GESTIONE_CORSI_SEDE),
+        "min_sedi": Aspirante.MINIMO_COMITATI,
+        "max_km": Aspirante.MASSIMO_RAGGIO,
     }
     return 'formazione_corsi_base_domanda.html', contesto
 
@@ -291,6 +294,14 @@ def aspirante_corso_base_attiva(request, me, pk):
                                          "Torna alla pagina del corso e verifica che tutti i "
                                          "criteri siano stati soddisfatti prima di attivare un "
                                          "nuovo corso.",
+                               torna_titolo="Torna al Corso",
+                               torna_url=corso.url)
+
+    if corso.data_inizio < poco_fa():
+        return errore_generico(request, me, titolo="Impossibile attivare un corso già iniziato",
+                               messaggio="Siamo spiacenti, ma non possiamo attivare il corso e inviare "
+                                         "le e-mail a tutti gli aspiranti nella zona se il corso è "
+                                         "già iniziato. Ti inviato a verificare i dati del corso.",
                                torna_titolo="Torna al Corso",
                                torna_url=corso.url)
 

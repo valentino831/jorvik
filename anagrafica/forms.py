@@ -1,5 +1,6 @@
 import datetime
 
+import stdnum
 from django import forms
 from django.contrib.auth.forms import PasswordChangeForm
 from django.core.exceptions import ValidationError
@@ -222,8 +223,10 @@ class ModuloConsentiTrasferimento(forms.Form):
     protocollo_numero = forms.CharField(max_length=32, label="Numero di protocollo", help_text="Numero di protocollo con cui è stata registrata la richiesta.")
     protocollo_data = forms.DateField(label="Data del protocollo", help_text="Data di registrazione del protocollo.")
 
+
 class ModuloConsentiRiserva(ModuloConsentiTrasferimento):
     pass
+
 
 class ModuloNuovoProvvedimento(autocomplete_light.ModelForm):
     class Meta:
@@ -249,7 +252,6 @@ class ModuloCreazioneRiserva(ModelForm):
         if not fine or fine < inizio:
             raise forms.ValidationError("La fine di una riserva non può avvenire prima del suo inizio")
         return fine
-
 
 
 class ModuloCreazioneDelega(autocomplete_light.ModelForm):
@@ -286,8 +288,20 @@ class ModuloUtenza(ModelForm):
 class ModuloPresidenteSede(ModelForm):
     class Meta:
         model = Sede
-        fields = ['telefono', 'fax', 'email', 'codice_fiscale',
-                  'partita_iva', ]
+        fields = ['telefono', 'fax', 'email', 'pec', 'iban',
+                  'codice_fiscale', 'partita_iva', ]
+
+    def clean_partita_iva(self):
+        partita_iva = self.cleaned_data['partita_iva']
+        return stdnum.it.iva.compact(partita_iva)
+
+    def clean(self):
+        # Tutti i campi obbligatori
+        campi_obbligatori = ['telefono', 'email', 'pec', 'iban', 'codice_fiscale', 'partita_iva']
+        tutti_campi = {y: v for y, v in self.cleaned_data.copy().items() if y in campi_obbligatori}.items()
+        for chiave, valore in tutti_campi:
+            if not valore:
+                self.add_error(chiave, "Questo campo è obbligatorio.")
 
 
 class ModuloImportVolontari(forms.Form):
@@ -321,3 +335,8 @@ class ModuloModificaDataInizioAppartenenza(ModelForm):
         if inizio > timezone.now():
             raise ValidationError("La data non può essere nel futuro.")
         return inizio
+
+
+class ModuloImportPresidenti(forms.Form):
+    presidente = autocomplete_light.ModelChoiceField("PresidenteAutocompletamento")
+    sede = autocomplete_light.ModelChoiceField("ComitatoAutocompletamento")

@@ -157,6 +157,9 @@ urlpatterns = [
     url(r'^presidente/$', 'anagrafica.viste.presidente'),
     url(r'^presidente/sedi/(?P<sede_pk>[0-9]+)/$', 'anagrafica.viste.presidente_sede'),
     url(r'^presidente/sedi/(?P<sede_pk>[0-9]+)/delegati/(?P<delega>.*)/$', 'anagrafica.viste.presidente_sede_delegati'),
+    url(r'^presidente/checklist/(?P<sede_pk>[0-9]+)/$', 'anagrafica.viste.presidente_checklist'),
+    url(r'^presidente/checklist/(?P<sede_pk>[0-9]+)/(?P<tipo>.*)/(?P<oggetto_tipo>[0-9]+)/(?P<oggetto_id>[0-9]+)/',
+        'anagrafica.viste.presidente_checklist_delegati'),
 
     url(r'^centrale-operativa/$', 'centrale_operativa.viste.co'),
     url(r'^centrale-operativa/reperibilita/$', 'centrale_operativa.viste.co_reperibilita'),
@@ -188,6 +191,9 @@ urlpatterns = [
     url(r'^us/tesserini/senza-fototessera/$', 'ufficio_soci.viste.us_tesserini_senza_fototessera'),
     url(r'^us/tesserini/richiesti/$', 'ufficio_soci.viste.us_tesserini_richiesti'),
     url(r'^us/tesserini/richiedi/(?P<persona_pk>[0-9]+)/$', 'ufficio_soci.viste.us_tesserini_richiedi'),
+    url(r'^us/tesserini/emissione/$', 'ufficio_soci.viste.us_tesserini_emissione'),
+    url(r'^us/tesserini/emissione/processa/$', 'ufficio_soci.viste.us_tesserini_emissione_processa'),
+    url(r'^us/tesserini/emissione/scarica/$', 'ufficio_soci.viste.us_tesserini_emissione_scarica'),
 
     url(r'^us/elenco/(?P<elenco_id>.*)/(?P<pagina>[0-9]+)/$', 'ufficio_soci.viste.us_elenco'),
     url(r'^us/elenco/(?P<elenco_id>.*)/download/$', 'ufficio_soci.viste.us_elenco_download'),
@@ -254,6 +260,8 @@ urlpatterns = [
     # Amministrazione
 
     url(r'^admin/import/volontari/$', 'anagrafica.viste.admin_import_volontari'),
+    url(r'^admin/import/presidenti/$', 'anagrafica.viste.admin_import_presidenti'),
+    url(r'^admin/statistiche/$', 'anagrafica.viste.admin_statistiche'),
 
     url(r'^admin/', include(admin.site.urls)),
     url(r'^admin/', include('loginas.urls')),   # Login come utente
