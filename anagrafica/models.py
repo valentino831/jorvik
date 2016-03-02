@@ -243,8 +243,9 @@ class Persona(ModelloSemplice, ConMarcaTemporale, ConAllegati, ConVecchioID):
         verbose_name_plural = "Persone"
         app_label = 'anagrafica'
         index_together = [
-            ['nome', 'cognome',],
-            ['nome', 'cognome', 'codice_fiscale',],
+            ['nome', 'cognome'],
+            ['nome', 'cognome', 'codice_fiscale'],
+            ['id', 'nome', 'cognome', 'codice_fiscale'],
         ]
 
     # Q: Qual e' il numero di telefono di questa persona?
@@ -594,6 +595,34 @@ class Persona(ModelloSemplice, ConMarcaTemporale, ConAllegati, ConVecchioID):
         :return: Queryset della posta in uscita.
         """
         return Messaggio.objects.filter(mittente=self).order_by('-creazione')
+
+    def da_aspirante_a_volontario(self, sede, inizio=None, mittente=None):
+        """
+        Questa funzione trasforma la Persona da aspirante in volontario.
+        - Rimuove l'oggetto aspirante associato alla persona,
+        - Crea una nuova appartenenza di tipo VOLONTARIO presso la Sede.
+        """
+
+        # Cancella tutti gli oggetti aspirante.
+        from formazione.models import Aspirante
+        Aspirante.objects.filter(persona=self).delete()
+
+        if self.volontario:
+            return
+
+        inizio = inizio or poco_fa()
+
+        # Se precedentemente era ordinario, la sua appartenenza come tale finisce qui.
+        Appartenenza.query_attuale(persona=self, membro__in=Appartenenza.MEMBRO_SOCIO).update(fine=inizio)
+
+        # Crea la nuova appartenenza.
+        appartenenza = Appartenenza(
+            inizio=inizio,
+            membro=Appartenenza.VOLONTARIO,
+            persona=self,
+            sede=sede,
+        )
+        appartenenza.save()
 
     @property
     def url(self):
@@ -993,15 +1022,17 @@ class Appartenenza(ModelloSemplice, ConStorico, ConMarcaTemporale, ConAutorizzaz
         verbose_name_plural = "Appartenenze"
         app_label = 'anagrafica'
         index_together = [
-            ['persona', 'sede',],
+            ['persona', 'sede'],
             ['persona', 'inizio', 'fine'],
             ['persona', 'inizio', 'fine', 'membro'],
             ['persona', 'inizio', 'fine', 'membro', 'confermata'],
-            ['sede', 'membro',],
-            ['inizio', 'fine',],
+            ['sede', 'membro'],
+            ['inizio', 'fine'],
             ['sede', 'inizio', 'fine'],
             ['sede', 'membro', 'inizio', 'fine'],
+            ['id', 'sede', 'membro', 'inizio', 'fine'],
             ['membro', 'confermata'],
+            ['membro', 'confermata', 'sede'],
             ['membro', 'confermata', 'inizio', 'fine'],
             ['membro', 'confermata', 'persona'],
             ['confermata', 'persona'],
@@ -1198,6 +1229,8 @@ class Sede(ModelloAlbero, ConMarcaTemporale, ConGeolocalizzazione, ConVecchioID,
     telefono = models.CharField("Telefono", max_length=64, blank=True)
     fax = models.CharField("FAX", max_length=64, blank=True)
     email = models.EmailField("Indirizzo e-mail", max_length=64, blank=True)
+    sito_web = models.URLField("Sito Web", blank=True,
+                               help_text="URL completo del sito web, es.: http://www.cri.it/.")
     pec = models.EmailField("Indirizzo PEC", max_length=64, blank=True)
     iban = models.CharField("IBAN", max_length=32, blank=True,
                             help_text="Coordinate bancarie internazionali del "
@@ -1241,6 +1274,9 @@ class Sede(ModelloAlbero, ConMarcaTemporale, ConGeolocalizzazione, ConVecchioID,
         presidente_attuale = self.deleghe_attuali(tipo=PRESIDENTE).first()
         if not presidente_attuale:
             return False
+        # Deve avere una locazione geografica
+        if not self.locazione:
+            return True
         return self.ultima_modifica < presidente_attuale.inizio
 
     @property
@@ -1320,7 +1356,7 @@ class Sede(ModelloAlbero, ConMarcaTemporale, ConGeolocalizzazione, ConVecchioID,
         :return:
         """
         if figli:
-            kwargs.update({'sede__in': self.get_descendants(include_self=True) })
+            kwargs.update({'sede__in': self.get_descendants(include_self=True)})
         else:
             kwargs.update({'sede': self.pk})
 
