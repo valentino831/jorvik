@@ -1701,7 +1701,7 @@ class Trasferimento(ModelloSemplice, ConMarcaTemporale, ConAutorizzazioni, ConPD
     richiedente = models.ForeignKey(Persona, related_name='trasferimenti_richiesti_da', on_delete=models.SET_NULL, null=True)
     persona = models.ForeignKey(Persona, related_name='trasferimenti', on_delete=models.CASCADE)
     destinazione = models.ForeignKey(Sede, related_name='trasferimenti_destinazione', on_delete=models.PROTECT)
-    appartenenza = models.ForeignKey(Appartenenza, related_name='trasferimento', null=True, blank=True, on_delete=models.PROTECT)
+    appartenenza = models.ForeignKey(Appartenenza, related_name='trasferimento', null=True, blank=True, on_delete=models.CASCADE)
     protocollo_numero = models.CharField('Numero di protocollo', max_length=16, null=True, blank=True)
     protocollo_data = models.DateField('Data di presa in carico', null=True, blank=True)
     motivo = models.CharField(max_length=2048, null=True, blank=False,)
@@ -1863,7 +1863,7 @@ class Riserva(ModelloSemplice, ConMarcaTemporale, ConStorico, ConProtocollo,
     RICHIESTA_NOME = "riserva"
     persona = models.ForeignKey(Persona, related_name="riserve", on_delete=models.CASCADE)
     motivo = models.CharField(max_length=4096)
-    appartenenza = models.ForeignKey(Appartenenza, related_name="riserve", on_delete=models.PROTECT)
+    appartenenza = models.ForeignKey(Appartenenza, related_name="riserve", on_delete=models.CASCADE)
 
     def richiedi(self):
         self.autorizzazione_richiedi_sede_riferimento(

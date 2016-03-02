@@ -355,7 +355,7 @@ class CorsoBase(Corso, ConVecchioID, ConPDF):
 class PartecipazioneCorsoBase(ModelloSemplice, ConMarcaTemporale, ConAutorizzazioni, ConPDF):
 
     persona = models.ForeignKey(Persona, related_name='partecipazioni_corsi', on_delete=models.CASCADE)
-    corso = models.ForeignKey(CorsoBase, related_name='partecipazioni', on_delete=models.PROTECT)
+    corso = models.ForeignKey(CorsoBase, related_name='partecipazioni', on_delete=models.CASCADE)
 
     # Dati per la generazione del verbale (esito)
 
@@ -506,7 +506,7 @@ class PartecipazioneCorsoBase(ModelloSemplice, ConMarcaTemporale, ConAutorizzazi
 
 class LezioneCorsoBase(ModelloSemplice, ConMarcaTemporale, ConGiudizio, ConStorico):
 
-    corso = models.ForeignKey(CorsoBase, related_name='lezioni', on_delete=models.PROTECT)
+    corso = models.ForeignKey(CorsoBase, related_name='lezioni', on_delete=models.CASCADE)
     nome = models.CharField(max_length=128)
 
     class Meta:

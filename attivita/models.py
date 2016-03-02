@@ -55,7 +55,7 @@ class Attivita(ModelloSemplice, ConGeolocalizzazione, ConMarcaTemporale, ConGiud
                             help_text="es. Aggiungi un posto a tavola")
     sede = models.ForeignKey('anagrafica.Sede', related_name='attivita', on_delete=models.PROTECT)
     area = models.ForeignKey("Area", related_name='attivita', on_delete=models.SET_NULL, null=True)
-    estensione = models.ForeignKey('anagrafica.Sede', null=True, default=None, related_name='attivita_estensione', on_delete=models.PROTECT)
+    estensione = models.ForeignKey('anagrafica.Sede', null=True, default=None, related_name='attivita_estensione', on_delete=models.CASCADE)
     stato = models.CharField(choices=STATO, default=BOZZA, max_length=1, db_index=True)
     apertura = models.CharField(choices=APERTURA, default=APERTA, max_length=1, db_index=True)
     descrizione = models.TextField(blank=True)

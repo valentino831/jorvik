@@ -23,7 +23,7 @@ class Tesserino(ModelloSemplice, ConMarcaTemporale, ConPDF):
         verbose_name_plural = "Richieste Tesserino Associativo"
 
     persona = models.ForeignKey('anagrafica.Persona', related_name='tesserini', on_delete=models.CASCADE)
-    emesso_da = models.ForeignKey('anagrafica.Sede', related_name='tesserini_emessi', on_delete=models.PROTECT)
+    emesso_da = models.ForeignKey('anagrafica.Sede', related_name='tesserini_emessi', on_delete=models.CASCADE)
 
     SCADENZA_ANNI = 5
 
