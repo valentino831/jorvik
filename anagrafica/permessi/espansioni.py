@@ -1,11 +1,14 @@
 from datetime import date
 
+from django.db.models import Q
+
 __author__ = 'alfioemanuele'
 
 from anagrafica.permessi.costanti import GESTIONE_SOCI, ELENCHI_SOCI, GESTIONE_ATTIVITA_SEDE, GESTIONE_CORSI_SEDE, \
     GESTIONE_SEDE, GESTIONE_ATTIVITA_AREA, GESTIONE_ATTIVITA, GESTIONE_CORSO, MODIFICA, LETTURA, COMPLETO, \
     GESTIONE_AUTOPARCHI_SEDE, GESTIONE_GRUPPO, GESTIONE_GRUPPI_SEDE, GESTIONE, GESTIONE_AREE_SEDE, \
-    GESTIONE_REFERENTI_ATTIVITA, GESTIONE_CENTRALE_OPERATIVA_SEDE, EMISSIONE_TESSERINI
+    GESTIONE_REFERENTI_ATTIVITA, GESTIONE_CENTRALE_OPERATIVA_SEDE, EMISSIONE_TESSERINI, \
+    GESTIONE_POTERI_CENTRALE_OPERATIVA_SEDE
 
 """
 Questo file gestisce la espansione dei permessi in Gaia.
@@ -60,12 +63,12 @@ def espandi_elenchi_soci(qs_sedi, al_giorno=None):
         (LETTURA,  Persona.objects.filter(Appartenenza.query_attuale(al_giorno=al_giorno, sede__in=qs_sedi, membro__in=Appartenenza.MEMBRO_DIRETTO).via("appartenenze"))),
         (LETTURA,  Persona.objects.filter(Appartenenza.query_attuale(al_giorno=al_giorno, sede__in=qs_sedi, membro__in=Appartenenza.MEMBRO_ESTESO).via("appartenenze"))),
         (LETTURA,  Quota.objects.filter(Appartenenza.query_attuale(al_giorno=al_giorno, sede__in=qs_sedi, membro__in=Appartenenza.MEMBRO_ESTESO).via("persona__appartenenze"))),
-        (LETTURA,  Quota.objects.filter(sede__in=qs_sedi)),
+        (LETTURA,  Quota.objects.filter(Q(Q(sede__in=qs_sedi) | Q(appartenenza__sede__in=qs_sedi)))),
         (LETTURA,  Persona.objects.filter(Appartenenza.con_esito_ok(sede__in=qs_sedi).via("appartenenze"))),
         (LETTURA,  Persona.objects.filter(Appartenenza.con_esito_pending(sede__in=qs_sedi).via("appartenenze"))),
         (LETTURA,  Persona.objects.filter(Appartenenza.con_esito_no(sede__in=qs_sedi).via("appartenenze"))),
         (LETTURA,  Riserva.objects.filter(Appartenenza.con_esito_ok(sede__in=qs_sedi).via("persona__appartenenze"))),
-        (LETTURA,  Tesserino.objects.filter(Appartenenza.con_esito_ok(sede__in=qs_sedi).via("persona__appartenenze")))
+        (LETTURA,  Tesserino.objects.filter(Appartenenza.con_esito_ok(sede__in=qs_sedi).via("persona__appartenenze"))),
     ]
 
 
@@ -113,6 +116,12 @@ def espandi_gestione_centrale_operativa_sede(qs_sedi, al_giorno=None):
     return [
         (LETTURA,   Persona.objects.filter(Appartenenza.query_attuale(al_giorno=al_giorno, sede__in=qs_sedi).via("appartenenze"), reperibilita__isnull=False)),
         (LETTURA,   Persona.objects.filter(Appartenenza.query_attuale(al_giorno=al_giorno, sede__in=qs_sedi).via("appartenenze"), coturni__isnull=False)),
+    ]
+
+
+def espandi_gestione_poteri_centrale_operativa_sede(qs_sedi, al_giorno=None):
+    return [
+
     ]
 
 
@@ -183,4 +192,5 @@ ESPANDI_PERMESSI = {
     GESTIONE_GRUPPO:                espandi_gestione_gruppo,
     GESTIONE_GRUPPI_SEDE:           espandi_gestione_gruppi_sede,
     GESTIONE_CENTRALE_OPERATIVA_SEDE:espandi_gestione_centrale_operativa_sede,
+    GESTIONE_POTERI_CENTRALE_OPERATIVA_SEDE:espandi_gestione_poteri_centrale_operativa_sede,
 }

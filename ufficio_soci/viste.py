@@ -149,11 +149,31 @@ def us_reclama_persona(request, me, persona_pk):
                                                              "seleziona 'No' su 'Registra Quota'.")
                     continua = False
 
+            vecchia_appartenenza = Appartenenza.query_attuale(persona=persona,
+                                                              membro=Appartenenza.ORDINARIO).first()
+            if vecchia_appartenenza:  # Se ordinario presso il regionale.
+                if modulo_appartenenza.cleaned_data['inizio'] < vecchia_appartenenza.inizio:
+                    modulo_appartenenza.add_error('inizio', "La persona non era socio ordinario CRI alla "
+                                                            "data selezionata. Inserisci la data corretta di "
+                                                            "cambio appartenenza.")
+                    continua = False
+
+            # Controllo eta' minima socio
+            if modulo_appartenenza.cleaned_data.get('membro') in Appartenenza.MEMBRO_SOCIO \
+                    and persona.eta < Persona.ETA_MINIMA_SOCIO:
+                modulo_appartenenza.add_error('membro', "I soci di questo tipo devono avere almeno "
+                                                        "%d anni. " % Persona.ETA_MINIMA_SOCIO)
+                continua = False
+
             if continua:
 
                 app = modulo_appartenenza.save(commit=False)
                 app.persona = persona
                 app.save()
+
+                if vecchia_appartenenza:  # Termina app. ordinario
+                    vecchia_appartenenza.fine = app.inizio
+                    vecchia_appartenenza.save()
 
                 q = modulo_quota.cleaned_data
 
@@ -319,11 +339,13 @@ def us_estensioni(request, me):
 
 @pagina_privata(permessi=(GESTIONE_SOCI,))
 def us_estensione_termina(request, me, pk):
-    estensione = get_object_or_404(Estensione, pk=pk)
-    if estensione not in me.oggetti_permesso(GESTIONE_SOCI):
+    appartenenza = get_object_or_404(Appartenenza, pk=pk)
+    if me.permessi_almeno(appartenenza, MODIFICA):
         return redirect(ERRORE_PERMESSI)
     else:
-        estensione.termina()
+        appartenenza.fine = poco_fa()
+        appartenenza.terminazione = Appartenenza.FINE_ESTENSIONE
+        appartenenza.save()
         return messaggio_generico(request, me, titolo="Estensione terminata",
                                       messaggio="L'estensione è stata"
                                                 "terminata con successo",
@@ -763,7 +785,7 @@ def us_quote_nuova(request, me):
         else:
 
             appartenenza = volontario.appartenenze_attuali(al_giorno=data_versamento, membro=Appartenenza.VOLONTARIO).first()
-            comitato = appartenenza.sede.comitato
+            comitato = appartenenza.sede.comitato if appartenenza else None
 
             if appartenenza.sede not in sedi:
                 modulo.add_error('volontario', 'Questo Volontario non è appartenente a una Sede di tua competenza.')
@@ -830,13 +852,17 @@ def us_ricevute_nuova(request, me):
 
         appartenenza = persona.appartenenze_attuali(al_giorno=data_versamento,
                                                     sede__in=sedi).first()
-        comitato = appartenenza.sede.comitato if appartenenza else None
 
-        if not appartenenza:
+        partecipazione_corso = persona.partecipazione_corso_base()
+
+        comitato = appartenenza.sede.comitato if appartenenza else partecipazione_corso.corso.sede.comitato
+
+        if not comitato:
             modulo.add_error('data_versamento', 'In questa data, la persona non risulta appartenente '
-                                                'come Volontario o Sostenitore per alla Sede.')
+                                                'come Volontario o Sostenitore per alla Sede o '
+                                                'partecipante confermato ad un corso base attivo.')
 
-        elif tipo_ricevuta == Quota.QUOTA_SOSTENITORE and appartenenza.membro != Appartenenza.SOSTENITORE:
+        elif tipo_ricevuta == Quota.QUOTA_SOSTENITORE and (not appartenenza or appartenenza.membro != Appartenenza.SOSTENITORE):
             modulo.add_error('persona', 'Questa persona non è registrata come Sostenitore CRI '
                                         'della Sede. Non è quindi possibile registrare la Ricevuta '
                                         'come Sostenitore CRI.')
@@ -857,6 +883,8 @@ def us_ricevute_nuova(request, me):
             # OK, paga quota!
             ricevuta = Quota.nuova(
                 appartenenza=appartenenza,
+                corso_comitato=comitato,
+                corso_persona=persona,
                 data_versamento=data_versamento,
                 registrato_da=me,
                 importo=importo,
@@ -895,7 +923,7 @@ def us_ricevute(request, me):
 
     sedi = me.oggetti_permesso(GESTIONE_SOCI)
     ricevute = Quota.objects.filter(
-        sede__in=sedi,
+        Q(Q(sede__in=sedi) | Q(appartenenza__sede__in=sedi)),
         anno=anno,
         tipo__in=tipi,
     ).order_by('progressivo')

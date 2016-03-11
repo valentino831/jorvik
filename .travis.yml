@@ -1,22 +1,23 @@
 language: python
 python:
-  - "3.3"
   - "3.4"
   - "3.5"
 addons:
   postgresql: "9.4"
 
+cache: pip
 
-#before_script:
-#  - "mysql -e 'CREATE DATABASE jorvik CHARSET utf8;'"
 before_script:
+  - "export DISPLAY=:99.0"
+  - "sh -e /etc/init.d/xvfb start"
+  - sleep 3 # give xvfb some time to start
   - psql -U postgres -c 'CREATE DATABASE jorvik;'
   - psql -U postgres -c "CREATE EXTENSION postgis" -d jorvik
   - psql -U postgres -c "CREATE EXTENSION postgis_topology" -d jorvik
 
 install:
+  - "pip install -U pip wheel"
   - "pip install -r requirements.txt"
 
 script:
-  - "python ./manage.py migrate"
-  - "python ./manage.py test -d -v 3"
+  - "python ./manage.py test -v 3"
