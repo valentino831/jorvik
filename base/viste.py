@@ -4,15 +4,14 @@ import os
 from django.contrib.auth import load_backend, login
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Count
-from django.db.models.loading import get_model
 from django.http import HttpResponse
 from django.shortcuts import render, render_to_response, get_object_or_404, redirect
 # Le viste base vanno qui.
 from django.views.decorators.cache import cache_page
-
+from django.apps import apps
 from anagrafica.costanti import LOCALE, PROVINCIALE, REGIONALE
 from anagrafica.models import Sede, Persona
-from anagrafica.permessi.costanti import ERRORE_PERMESSI, LETTURA
+from anagrafica.permessi.costanti import ERRORE_PERMESSI, LETTURA, GESTIONE_SEDE
 from autenticazione.funzioni import pagina_pubblica, pagina_anonima, pagina_privata
 from autenticazione.models import Utenza
 from base import errori
@@ -331,7 +330,7 @@ def geo_localizzatore(request, me):
     model = request.session['model']
     pk = int(request.session['pk'])
     continua_url = request.session['continua_url']
-    oggetto = get_model(app_label, model)
+    oggetto = apps.get_model(app_label, model)
     oggetto = oggetto.objects.get(pk=pk)
 
     risultati = None
@@ -364,7 +363,7 @@ def geo_localizzatore_imposta(request, me):
     app_label = request.session['app_label']
     model = request.session['model']
     pk = int(request.session['pk'])
-    oggetto = get_model(app_label, model)
+    oggetto = apps.get_model(app_label, model)
     oggetto = oggetto.objects.get(pk=pk)
 
     oggetto.imposta_locazione(request.POST['indirizzo'])
@@ -373,7 +372,7 @@ def geo_localizzatore_imposta(request, me):
 
 @pagina_privata
 def pdf(request, me, app_label, model, pk):
-    oggetto = get_model(app_label, model)
+    oggetto = apps.get_model(app_label, model)
     oggetto = oggetto.objects.get(pk=pk)
     if not isinstance(oggetto, ConPDF):
         return errore_generico(request, None,
@@ -453,11 +452,17 @@ def supporto(request, me=None):
     if me:
         modulo = ModuloRichiestaSupporto(request.POST or None)
 
-        if not me.deleghe_attuali().exists():
-            scelte = modulo.fields['tipo'].choices
-            scelte = rimuovi_scelte([modulo.TERZO_LIVELLO, modulo.SECONDO_LIVELLO], scelte)
-            modulo.fields['tipo'].choices = scelte
+        scelte = modulo.fields['tipo'].choices
 
+        # Solo i delegati possono contattare SECONDO_LIVELLO e TERZO_LIVELLO
+        if not me.deleghe_attuali().exists():
+            scelte = rimuovi_scelte([modulo.TERZO_LIVELLO, modulo.SECONDO_LIVELLO], scelte)
+
+        # Solo i Presidenti possono contattare AREA_SVILUPPO
+        if not me.ha_permesso(GESTIONE_SEDE):
+            scelte = rimuovi_scelte([modulo.AREA_SVILUPPO], scelte)
+
+        modulo.fields['tipo'].choices = scelte
 
     if modulo and modulo.is_valid():
         tipo = modulo.cleaned_data['tipo']

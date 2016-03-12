@@ -3,8 +3,8 @@ import csv
 import datetime
 from collections import OrderedDict
 
+from django.apps import apps
 from django.contrib.contenttypes.models import ContentType
-from django.db.models.loading import get_model
 from django.http import HttpResponse
 from django.shortcuts import render_to_response, redirect, get_object_or_404
 from django.contrib.auth import login
@@ -785,7 +785,7 @@ def strumenti_delegati(request, me):
     continua_url = request.session['continua_url']
     almeno = request.session['almeno']
     delega = request.session['delega']
-    oggetto = get_model(app_label, model)
+    oggetto = apps.get_model(app_label, model)
     oggetto = oggetto.objects.get(pk=pk)
 
     modulo = ModuloCreazioneDelega(request.POST or None, initial={
@@ -835,7 +835,7 @@ def strumenti_delegati_termina(request, me, delega_pk=None):
     continua_url = request.session['continua_url']
     almeno = request.session['almeno']
     delega = request.session['delega']
-    oggetto = get_model(app_label, model)
+    oggetto = apps.get_model(app_label, model)
     oggetto = oggetto.objects.get(pk=pk)
 
     delega = get_object_or_404(Delega, pk=delega_pk)
@@ -973,7 +973,8 @@ def _profilo_appartenenze(request, me, persona):
     appartenenze = zip(persona.appartenenze.all(), moduli)
 
     contesto = {
-        "appartenenze": appartenenze
+        "appartenenze": appartenenze,
+        "es": Appartenenza.ESTESO
     }
 
     return 'anagrafica_profilo_appartenenze.html', contesto
@@ -1463,6 +1464,7 @@ def admin_statistiche(request, me):
         data_nascita__gt=nascita_minima_35,
     )
     sedi = Sede.objects.filter(attiva=True)
+    comitati = sedi.comitati()
     regionali = Sede.objects.filter(estensione=REGIONALE).exclude(nome__contains='Provinciale Di Roma')
 
     totale_regione_soci = 0
@@ -1479,8 +1481,8 @@ def admin_statistiche(request, me):
                 regione_volontari,
             ),
         ]
-        totale_regione_soci += int(regione_soci)
-        totale_regione_volontari += int(regione_volontari)
+        totale_regione_soci += regione_soci
+        totale_regione_volontari += regione_volontari
 
     contesto = {
         "persone_numero": persone.count(),
@@ -1489,6 +1491,7 @@ def admin_statistiche(request, me):
         "soci_giovani_35_numero": soci_giovani_35.count(),
         "soci_giovani_35_percentuale": soci_giovani_35.count() / soci.count() * 100,
         "sedi_numero": sedi.count(),
+        "comitati_numero": comitati.count(),
         "ora": timezone.now(),
         "regione_soci_volontari": regione_soci_volontari,
         "totale_regione_soci": totale_regione_soci,

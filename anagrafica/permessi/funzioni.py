@@ -2,7 +2,9 @@
 Questo modulo contiene tutte le funzioni per testare i permessi
 a partire da un oggetto sul quale ho una delega ed un oggetto da testare.
 """
-from django.db.models import QuerySet
+from datetime import timedelta
+
+from django.db.models import QuerySet, Q
 
 from anagrafica.permessi.applicazioni import PRESIDENTE, DIRETTORE_CORSO, RESPONSABILE_AUTOPARCO, REFERENTE_GRUPPO, \
     UFFICIO_SOCI_UNITA, DELEGATO_OBIETTIVO_1, DELEGATO_OBIETTIVO_2, DELEGATO_OBIETTIVO_3, DELEGATO_OBIETTIVO_4, \
@@ -15,7 +17,41 @@ from anagrafica.permessi.applicazioni import REFERENTE
 from anagrafica.permessi.costanti import GESTIONE_SOCI, ELENCHI_SOCI, GESTIONE_ATTIVITA_SEDE, GESTIONE_CORSI_SEDE, \
     GESTIONE_SEDE, GESTIONE_ATTIVITA_AREA, GESTIONE_ATTIVITA, GESTIONE_CORSO, GESTIONE_AUTOPARCHI_SEDE, \
     GESTIONE_GRUPPI_SEDE, GESTIONE_GRUPPO, GESTIONE_AREE_SEDE, GESTIONE_REFERENTI_ATTIVITA, \
-    GESTIONE_CENTRALE_OPERATIVA_SEDE, EMISSIONE_TESSERINI
+    GESTIONE_CENTRALE_OPERATIVA_SEDE, EMISSIONE_TESSERINI, GESTIONE_POTERI_CENTRALE_OPERATIVA_SEDE
+
+
+def permessi_persona(persona):
+    """
+    Permessi di ogni persona (nessuna delega).
+
+    :param persona: La persona.
+    :return: Lista di permessi.
+    """
+    from anagrafica.models import Sede
+    from attivita.models import Attivita, Partecipazione
+    from base.utils import poco_fa
+
+    # Limiti di tempo per la centrale operativa
+    quindici_minuti_fa = poco_fa() - timedelta(minutes=Attivita.MINUTI_CENTRALE_OPERATIVA)
+    tra_quindici_minuti = poco_fa() + timedelta(minutes=Attivita.MINUTI_CENTRALE_OPERATIVA)
+
+    # Sedi per le quali sto effettuando un servizio di centrale operativa
+    sede_centrale_operativa = Sede.objects.filter(
+        Partecipazione.con_esito(Partecipazione.ESITO_OK,
+                                 persona=persona,
+                                 ).via("attivita__turni__partecipazioni"),
+        Q(
+            Q(attivita__centrale_operativa=Attivita.CO_AUTO)
+            | Q(attivita__centrale_operativa=Attivita.CO_MANUALE,
+                attivita__turni__partecipazioni__centrale_operativa=True)
+        ),
+        attivita__turni__inizio__lte=tra_quindici_minuti,
+        attivita__turni__fine__gte=quindici_minuti_fa,
+    )
+
+    return [
+        (GESTIONE_CENTRALE_OPERATIVA_SEDE, sede_centrale_operativa)
+    ]
 
 
 def permessi_presidente(sede):
@@ -185,7 +221,7 @@ def permessi_delegato_area(area):
         qs_area = area
     else:
         qs_area = area.queryset_modello()
-    attivita = Attivita.objects.filter(area=area)
+    attivita = Attivita.objects.filter(area__in=qs_area)
     return [
         (GESTIONE_ATTIVITA_AREA,        qs_area),
         (GESTIONE_ATTIVITA,             attivita),
@@ -196,7 +232,8 @@ def permessi_delegato_area(area):
 def permessi_delegato_centrale_operativa(sede):
     sede_espansa = sede.espandi(includi_me=True)
     return [
-        (GESTIONE_CENTRALE_OPERATIVA_SEDE,  sede_espansa),
+        (GESTIONE_CENTRALE_OPERATIVA_SEDE,          sede_espansa),
+        (GESTIONE_POTERI_CENTRALE_OPERATIVA_SEDE,   sede_espansa),
     ]
 
 

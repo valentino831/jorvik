@@ -1,16 +1,18 @@
-from datetime import timedelta, date
+from datetime import timedelta, date, time, datetime
 
 from django.db.models import Q, F
 from django.shortcuts import redirect, get_object_or_404
 
 from anagrafica.models import Appartenenza
-from anagrafica.permessi.costanti import ERRORE_PERMESSI, GESTIONE_CENTRALE_OPERATIVA_SEDE
-from attivita.models import Partecipazione
+from anagrafica.permessi.costanti import ERRORE_PERMESSI, GESTIONE_CENTRALE_OPERATIVA_SEDE, \
+    GESTIONE_POTERI_CENTRALE_OPERATIVA_SEDE
+from attivita.models import Partecipazione, Attivita
 from autenticazione.funzioni import pagina_privata
 from base.errori import errore_generico
 from base.utils import poco_fa
-from centrale_operativa.forms import ModuloNuovaReperibilita
+from centrale_operativa.forms import ModuloNuovaReperibilita, ModuloPoteri
 from centrale_operativa.models import Reperibilita, Turno
+from django.utils import timezone
 
 
 @pagina_privata
@@ -68,18 +70,72 @@ def co_reperibilita(request, me):
 
 
 @pagina_privata
+def co_poteri(request, me):
+    sedi = me.oggetti_permesso(GESTIONE_POTERI_CENTRALE_OPERATIVA_SEDE)
+
+    modulo = ModuloPoteri(request.GET or None)
+    giorno = date.today()
+    if modulo.is_valid():
+        giorno = modulo.cleaned_data['giorno']
+
+    minuti = Attivita.MINUTI_CENTRALE_OPERATIVA
+
+    # Limiti di tempo per la centrale operativa
+    giorno_inizio = datetime.combine(giorno, time(0, 0))
+    giorno_fine = datetime.combine(giorno, time(23, 59))
+
+    url = "/centrale-operativa/poteri/"
+
+    ieri = "%s?giorno=%s" % (url, (giorno - timedelta(days=1)).strftime("%d/%m/%Y"))
+    domani = "%s?giorno=%s" % (url, (giorno + timedelta(days=1)).strftime("%d/%m/%Y"))
+
+    partecipazioni = Partecipazione.con_esito_ok().filter(
+        turno__inizio__lte=giorno_fine,
+        turno__fine__gte=giorno_inizio,
+        turno__attivita__centrale_operativa=Attivita.CO_MANUALE,
+        turno__attivita__sede__in=sedi,
+    ).order_by('turno__inizio')
+
+    contesto = {
+        "partecipazioni": partecipazioni,
+        "minuti": minuti,
+        "modulo": modulo,
+        "ieri": ieri,
+        "domani": domani,
+    }
+    return "centrale_operativa_poteri.html", contesto
+
+
+@pagina_privata
+def co_poteri_switch(request, me, part_pk):
+    sedi = me.oggetti_permesso(GESTIONE_POTERI_CENTRALE_OPERATIVA_SEDE)
+
+    partecipazione = Partecipazione.con_esito_ok(
+        turno__attivita__sede__in=sedi,
+        pk=part_pk
+    ).first()
+
+    next = request.GET.get('next', default='/centrale-operativa/poteri/')
+
+    if not partecipazione:
+        return errore_generico(request, me, titolo="Partecipazione non trovata")
+
+    partecipazione.centrale_operativa = not partecipazione.centrale_operativa
+    partecipazione.save()
+
+    return redirect(next)
+
+
+@pagina_privata
 def co_turni(request, me):
     sedi = me.oggetti_permesso(GESTIONE_CENTRALE_OPERATIVA_SEDE)
     tra_qualche_ora = poco_fa() + timedelta(hours=2)
     qualche_ora_fa = poco_fa() - timedelta(hours=2)
-    ora = poco_fa()
     partecipazioni = Partecipazione.con_esito_ok().filter(
-            Q(turno__attivita__sede__in=sedi),                              # Nelle mie sedi di competenza
-            Q(turno__inizio__gte=ora, turno__inizio__lte=tra_qualche_ora)   # a) Che inizia nelle prossime ore,   oppure
-            | Q(turno__fine__lte=ora, turno__fine__gte=qualche_ora_fa)      # b) Finita di recente,               oppure
-            | Q(turno__inizio__lte=ora, turno__fine__gte=ora)               # c) In corso                         oppure
+            Q(turno__attivita__sede__in=sedi),                                       # Nelle mie sedi di competenza
+            Q(turno__inizio__lte=tra_qualche_ora, turno__fine__gte=qualche_ora_fa)   # a) In corso, oppure
             | Q(turno__coturni__montato_da__isnull=False,
-                turno__coturni__smontato_da__isnull=True)                   # d) Da smontare
+                turno__coturni__smontato_da__isnull=True)                            # d) Da smontare
         ).select_related('turno', 'turno__attivita', 'turno__attivita__sede')\
          .order_by('turno__inizio', 'turno__fine', 'turno__id', 'persona__id')\
          .distinct('turno__inizio', 'turno__fine', 'turno__id', 'persona__id')
