@@ -231,3 +231,5 @@ BOOTSTRAP3 = {
         'inline': 'bootstrap3.renderers.InlineFieldRenderer',
     },
 }
+
+CAN_LOGIN_AS = lambda r, u: r.user.is_superuser or (u.is_superuser and 'loginas_from_user' in r.session)

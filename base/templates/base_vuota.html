@@ -32,12 +32,21 @@
                         <i class="fa fa-user"></i>
                         Ciao, <strong>{{ me.nome }}</strong>
                     </a>
+
                     {% if me.admin %}
                         <a class="btn btn-default btn-sm" href="/admin/">
                             <i class="fa fa-cogs"></i>
                             Amministrazione
                         </a>
                     {% endif %}
+
+                    {% if request.back_admin %}
+                        <a class="btn btn-default btn-sm" href="{% url 'loginas-user-login' request.back_admin.pk %}">
+                            <i class="fa fa-cogs"></i>
+                            Torna {{ request.back_admin.persona.nome }}
+                        </a>
+                    {% endif %}
+
                     <a class="btn btn-sm btn-info" href="/logout/">
                         <i class="fa fa-sign-out"></i>
                         Logout

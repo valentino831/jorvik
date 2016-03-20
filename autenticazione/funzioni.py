@@ -111,6 +111,17 @@ def pagina_privata(funzione=None, pagina=LOGIN_URL, permessi=[]):
         if template is None:  # Se ritorna risposta particolare (ie. Stream o Redirect)
             return richiesta  # Passa attraverso.
 
+        from autenticazione.models import Utenza
+        back_admin = None
+        try:
+            back_admin = Utenza.objects.get(pk=request.session['loginas_from_user'], is_superuser=True)
+        except IndexError:  # Non in sessinoe.
+            pass
+        except Utenza.DoesNotExist:  # Non esiste.
+            pass
+
+        request.back_admin = back_admin
+
         contesto.update({"me": request.me})
         contesto.update({"request": request})
         contesto.update({"menu": menu(request)})
