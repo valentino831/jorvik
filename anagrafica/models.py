@@ -51,7 +51,7 @@ from base.models import ModelloSemplice, ModelloAlbero, ConAutorizzazioni, ConAl
     Autorizzazione, ConVecchioID
 from base.stringhe import normalizza_nome, GeneratoreNomeFile
 from base.tratti import ConMarcaTemporale, ConStorico, ConProtocollo, ConDelegati, ConPDF
-from base.utils import is_list, sede_slugify, UpperCaseCharField, poco_fa
+from base.utils import is_list, sede_slugify, UpperCaseCharField, poco_fa, TitleCharField
 from autoslug import AutoSlugField
 
 from curriculum.models import Titolo, TitoloPersonale
@@ -85,8 +85,8 @@ class Persona(ModelloSemplice, ConMarcaTemporale, ConAllegati, ConVecchioID):
     ETA_MINIMA_SOCIO = 14
 
     # Informazioni anagrafiche
-    nome = models.CharField("Nome", max_length=64, db_index=True)
-    cognome = models.CharField("Cognome", max_length=64, db_index=True)
+    nome = TitleCharField("Nome", max_length=64, db_index=True)
+    cognome = TitleCharField("Cognome", max_length=64, db_index=True)
     codice_fiscale = UpperCaseCharField("Codice Fiscale", max_length=16, blank=False,
                                         unique=True, db_index=True, validators=[valida_codice_fiscale, ])
     data_nascita = models.DateField("Data di nascita", db_index=True, null=True)
@@ -96,12 +96,12 @@ class Persona(ModelloSemplice, ConMarcaTemporale, ConAllegati, ConVecchioID):
     stato = models.CharField("Stato", max_length=1, choices=STATO, default=PERSONA, db_index=True)
 
     # Informazioni anagrafiche aggiuntive - OPZIONALI (blank=True o default=..)
-    comune_nascita = models.CharField("Comune di Nascita", max_length=64, blank=True)
-    provincia_nascita = models.CharField("Provincia di Nascita", max_length=2, blank=True)
+    comune_nascita = TitleCharField("Comune di Nascita", max_length=64, blank=True)
+    provincia_nascita = TitleCharField("Provincia di Nascita", max_length=2, blank=True)
     stato_nascita = CountryField("Stato di nascita", default="IT")
-    indirizzo_residenza = models.CharField("Indirizzo di residenza", max_length=512, null=True)
-    comune_residenza = models.CharField("Comune di residenza", max_length=64, null=True)
-    provincia_residenza = models.CharField("Provincia di residenza", max_length=2, null=True)
+    indirizzo_residenza = TitleCharField("Indirizzo di residenza", max_length=512, null=True)
+    comune_residenza = TitleCharField("Comune di residenza", max_length=64, null=True)
+    provincia_residenza = TitleCharField("Provincia di residenza", max_length=2, null=True)
     stato_residenza = CountryField("Stato di residenza", default="IT")
     cap_residenza = models.CharField("CAP di Residenza", max_length=16, null=True)
     email_contatto = models.EmailField("Email di contatto", max_length=255, blank=True)

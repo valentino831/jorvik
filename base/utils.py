@@ -168,6 +168,24 @@ class UpperCaseCharField(models.CharField):
             return super(UpperCaseCharField, self).pre_save(model_instance, add)
 
 
+class TitleCharField(models.CharField):
+    """
+    Un CharField che forza il salvataggio con .title().
+    """
+
+    def __init__(self, *args, **kwargs):
+        super(TitleCharField, self).__init__(*args, **kwargs)
+
+    def pre_save(self, model_instance, add):
+        value = getattr(model_instance, self.attname, None)
+        if value:
+            value = value.title()
+            setattr(model_instance, self.attname, value)
+            return value
+        else:
+            return super(TitleCharField, self).pre_save(model_instance, add)
+
+
 def ean13_carattere_di_controllo(first12digits):
     charList = [char for char in first12digits]
     ean13 = [1,3]
