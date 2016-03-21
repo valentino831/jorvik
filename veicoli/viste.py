@@ -3,6 +3,7 @@ from django import forms
 from django.shortcuts import get_object_or_404, redirect
 from anagrafica.permessi.costanti import GESTIONE_AUTOPARCHI_SEDE, ERRORE_PERMESSI, MODIFICA
 from autenticazione.funzioni import pagina_privata
+from base.errori import messaggio_generico
 from base.utils import poco_fa
 from veicoli.forms import ModuloCreazioneVeicolo, ModuloCreazioneAutoparco, ModuloCreazioneManutenzione, \
     ModuloCreazioneFermoTecnico, ModuloCreazioneRifornimento, ModuloCreazioneCollocazione, ModuloFiltraVeicoli
@@ -192,6 +193,19 @@ def veicoli_modifica_manutenzione(request, me, manutenzione):
     }
     return "veicoli_modifica_manutenzione.html", contesto
 
+@pagina_privata
+def veicoli_elimina_manutenzione(request, me, manutenzione):
+    manutenzione = get_object_or_404(Manutenzione, pk=manutenzione)
+    veicolo = get_object_or_404(Veicolo, pk=manutenzione.veicolo.pk)
+    if not me.permessi_almeno(veicolo, MODIFICA):
+        return redirect(ERRORE_PERMESSI)
+    manutenzione.delete()
+    return messaggio_generico(request, me, titolo="Manutenzione eliminata",
+                                      messaggio="La manutenzione è stata"
+                                                "eliminata con successo",
+                                      torna_titolo="Torna all'elenco",
+                                      torna_url="/veicolo/manutenzioni/"+str(veicolo.pk)+"/")
+
 
 @pagina_privata
 def veicoli_modifica_rifornimento(request, me, rifornimento):
@@ -211,6 +225,20 @@ def veicoli_modifica_rifornimento(request, me, rifornimento):
          "veicolo": veicolo,
     }
     return "veicoli_modifica_rifornimento.html", contesto
+
+@pagina_privata
+def veicoli_elimina_rifornimento(request, me, rifornimento):
+    rifornimento = get_object_or_404(Rifornimento, pk=rifornimento)
+    veicolo = get_object_or_404(Veicolo, pk=rifornimento.veicolo.pk)
+    if not me.permessi_almeno(veicolo, MODIFICA):
+        return redirect(ERRORE_PERMESSI)
+    rifornimento.delete()
+    return messaggio_generico(request, me, titolo="Rifornimento eliminato",
+                                      messaggio="Il rifornimento è stato"
+                                                "eliminato con successo",
+                                      torna_titolo="Torna all'elenco",
+                                      torna_url="/veicolo/rifornimenti/"+str(veicolo.pk)+"/")
+
 
 @pagina_privata
 def veicoli_rifornimento(request, me, veicolo):

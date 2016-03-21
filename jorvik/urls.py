@@ -226,6 +226,8 @@ urlpatterns = [
     url(r'^veicolo/manutenzioni/(?P<veicolo>.*)/$', veicoli.viste.veicoli_manutenzione),
     url(r'^veicolo/manutenzione/(?P<manutenzione>.*)/modifica/$', veicoli.viste.veicoli_modifica_manutenzione),
     url(r'^veicolo/rifornimento/(?P<rifornimento>.*)/modifica/$', veicoli.viste.veicoli_modifica_rifornimento),
+    url(r'^veicolo/manutenzione/(?P<manutenzione>.*)/elimina/$', veicoli.viste.veicoli_elimina_manutenzione),
+    url(r'^veicolo/rifornimento/(?P<rifornimento>.*)/elimina/$', veicoli.viste.veicoli_elimina_rifornimento),
     url(r'^veicolo/rifornimenti/(?P<veicolo>.*)/$', veicoli.viste.veicoli_rifornimento),
     url(r'^veicolo/fermi-tecnici/(?P<veicolo>.*)/$', veicoli.viste.veicoli_fermo_tecnico),
     url(r'^veicolo/termina/fermo-tecnico/(?P<fermo>.*)/$', veicoli.viste.veicoli_termina_fermo_tecnico),
