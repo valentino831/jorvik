@@ -43,7 +43,7 @@ from anagrafica.permessi.persona import persona_ha_permesso, persona_oggetti_per
     persona_permessi_almeno, persona_ha_permessi
 from anagrafica.validators import valida_codice_fiscale, ottieni_genere_da_codice_fiscale, \
     crea_validatore_dimensione_file, valida_dimensione_file_8mb, valida_dimensione_file_5mb, valida_almeno_14_anni, \
-    valida_partita_iva, valida_iban
+    valida_partita_iva, valida_iban, valida_email_personale
 from attivita.models import Turno, Partecipazione
 from base.files import PDF, Excel, FoglioExcel
 from base.geo import ConGeolocalizzazioneRaggio, ConGeolocalizzazione
@@ -104,7 +104,8 @@ class Persona(ModelloSemplice, ConMarcaTemporale, ConAllegati, ConVecchioID):
     provincia_residenza = models.CharField("Provincia di residenza", max_length=2, null=True)
     stato_residenza = CountryField("Stato di residenza", default="IT")
     cap_residenza = models.CharField("CAP di Residenza", max_length=16, null=True)
-    email_contatto = models.EmailField("Email di contatto", max_length=255, blank=True)
+    email_contatto = models.EmailField("Email di contatto", max_length=255, blank=True,
+                                       validators=[valida_email_personale])
     note = models.TextField("Note aggiuntive", max_length=10000, blank=True, null=True,)
 
     avatar = models.ImageField("Avatar", blank=True, null=True,
@@ -1282,7 +1283,9 @@ class Sede(ModelloAlbero, ConMarcaTemporale, ConGeolocalizzazione, ConVecchioID,
 
     @property
     def url(self):
-        return "/informazioni/sedi/" + str(self.slug) + "/"
+        if self.estensione == TERRITORIALE:
+            return self.comitato.url
+        return "/informazioni/sedi/%s/" % self.slug
 
     @property
     def url_checklist(self):
@@ -1515,6 +1518,17 @@ class Sede(ModelloAlbero, ConMarcaTemporale, ConGeolocalizzazione, ConVecchioID,
 
         else:
             return queryset
+
+    def comitati_sottostanti(self):
+        """
+        Ritorna un elenco di Comitati sottostanti.
+        Es. Regionale -> QuerySet Provinciali
+        """
+        return self.get_children().filter(estensione__in=(REGIONALE, PROVINCIALE,
+                                                          LOCALE))
+
+    def unita_sottostanti(self):
+        return self.get_children().filter(estensione=TERRITORIALE)
 
 
 class Delega(ModelloSemplice, ConStorico, ConMarcaTemporale):
@@ -1856,6 +1870,18 @@ class Estensione(ModelloSemplice, ConMarcaTemporale, ConAutorizzazioni, ConPDF):
             INCARICO_GESTIONE_ESTENSIONI,
             invia_notifica_presidente=True
         )
+        if self.destinazione.presidente():
+            Messaggio.costruisci_e_invia(
+               oggetto="Notifica di Estensione in entrata",
+               modello="email_richiesta_estensione_cc.html",
+               corpo={
+                   "estensione": self,
+               },
+               mittente=None,
+               destinatari=[
+                    self.destinazione.presidente(),
+               ]
+            )
 
     def termina(self):
         self.appartenenza.fine = poco_fa()

@@ -13,7 +13,12 @@ class ModuloCreazioneAutoparco(ModelForm):
 class ModuloCreazioneVeicolo(ModelForm):
     class Meta:
         model = Veicolo
-        fields = ['stato', 'libretto', 'targa', 'prima_immatricolazione', 'proprietario_cognome', 'proprietario_nome', 'proprietario_indirizzo', 'pneumatici_anteriori', 'pneumatici_posteriori', 'pneumatici_alt_anteriori', 'pneumatici_alt_posteriori', 'cambio', 'lunghezza', 'larghezza', 'sbalzo', 'tara', 'marca', 'modello', 'telaio', 'massa_max', 'data_immatricolazione', 'categoria', 'destinazione', 'carrozzeria', 'omologazione', 'num_assi', 'rimorchio_frenato', 'cilindrata', 'potenza_massima', 'alimentazione', 'posti', 'regime', 'card_rifornimento', 'selettiva_radio', 'telepass']
+        fields = ['stato', 'libretto', 'targa', 'prima_immatricolazione', 'proprietario_cognome', 'proprietario_nome',
+                  'proprietario_indirizzo', 'pneumatici_anteriori', 'pneumatici_posteriori', 'pneumatici_alt_anteriori',
+                  'pneumatici_alt_posteriori', 'cambio', 'lunghezza', 'larghezza', 'sbalzo', 'tara', 'marca', 'modello',
+                  'telaio', 'massa_max', 'data_immatricolazione', 'categoria', 'destinazione', 'carrozzeria',
+                  'omologazione', 'num_assi', 'rimorchio_frenato', 'cilindrata', 'potenza_massima', 'alimentazione',
+                  'posti', 'regime', 'intervallo_revisione','card_rifornimento', 'selettiva_radio', 'telepass']
 
 
 class ModuloCreazioneRifornimento(autocomplete_light.ModelForm):
@@ -44,3 +49,9 @@ class ModuloCreazioneSegnalazione(ModelForm):
     class Meta:
         model = Segnalazione
         fields = ['descrizione', 'manutenzione']
+
+class ModuloFiltraVeicoli(forms.Form):
+
+    autoparchi = forms.ModelMultipleChoiceField(queryset=Autoparco.objects.none(), help_text="È possibile selezionare più di un autoparco alla volta")
+    targa = forms.CharField(required=False, help_text="È possibile ricercare targhe parziali")
+    stato = forms.ChoiceField(choices=Veicolo.STATO, required=False, help_text="Stato del veicolo", initial=Veicolo.IN_SERVIZIO)

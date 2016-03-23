@@ -19,7 +19,8 @@ from anagrafica.forms import ModuloStepComitato, ModuloStepCredenziali, ModuloMo
     ModuloCreazioneTelefono, ModuloCreazioneEstensione, ModuloCreazioneTrasferimento, ModuloCreazioneDelega, \
     ModuloDonatore, ModuloDonazione, ModuloNuovaFototessera, ModuloProfiloModificaAnagrafica, \
     ModuloProfiloTitoloPersonale, ModuloUtenza, ModuloCreazioneRiserva, ModuloModificaPrivacy, ModuloPresidenteSede, \
-    ModuloImportVolontari, ModuloModificaDataInizioAppartenenza, ModuloImportPresidenti
+    ModuloImportVolontari, ModuloModificaDataInizioAppartenenza, ModuloImportPresidenti, ModuloPulisciEmail, \
+    ModuloUSModificaUtenza
 from anagrafica.forms import ModuloStepCodiceFiscale
 from anagrafica.forms import ModuloStepAnagrafica
 
@@ -44,10 +45,10 @@ from base.files import Zip
 from base.models import Log
 from base.notifiche import NOTIFICA_INVIA
 from base.stringhe import genera_uuid_casuale
-from base.utils import remove_none, poco_fa
+from base.utils import remove_none, poco_fa, oggi
 from curriculum.forms import ModuloNuovoTitoloPersonale, ModuloDettagliTitoloPersonale
 from curriculum.models import Titolo, TitoloPersonale
-from posta.models import Messaggio
+from posta.models import Messaggio, Q
 from posta.utils import imposta_destinatari_e_scrivi_messaggio
 from sangue.models import Donatore, Donazione
 
@@ -634,8 +635,8 @@ def utente_trasferimento(request, me):
         trasf = modulo.save(commit=False)
         if trasf.destinazione in me.sedi_attuali():
             modulo.add_error('destinazione', 'Sei già appartenente a questa sede.')
-        elif trasf.destinazione.comitato != me.sede_riferimento().comitato and True:##che in realta' e' il discriminatore delle elezioni
-            return errore_generico(request, me, messaggio="Non puoi richiedere un trasferimento tra comitati durante il periodo elettorale")
+        #elif trasf.destinazione.comitato != me.sede_riferimento().comitato and True:##che in realta' e' il discriminatore delle elezioni
+        #    return errore_generico(request, me, messaggio="Non puoi richiedere un trasferimento tra comitati durante il periodo elettorale")
         elif me.trasferimento:
             return errore_generico(request, me, messaggio="Non puoi richiedere piú di un trasferimento alla volta")
         else:
@@ -1093,8 +1094,10 @@ def _profilo_quote(request, me, persona):
 def _profilo_credenziali(request, me, persona):
     utenza = Utenza.objects.filter(persona=persona).first()
 
-    modulo_utenza = None
-    if not utenza:
+    modulo_utenza = modulo_modifica = None
+    if utenza:
+        modulo_modifica = ModuloUSModificaUtenza(request.POST or None, instance=utenza)
+    else:
         modulo_utenza = ModuloUtenza(request.POST or None, instance=utenza, initial={"email": persona.email_contatto})
 
     if modulo_utenza and modulo_utenza.is_valid():
@@ -1104,9 +1107,56 @@ def _profilo_credenziali(request, me, persona):
         utenza.genera_credenziali()
         return redirect(persona.url_profilo_credenziali)
 
+    if modulo_modifica and modulo_modifica.is_valid():
+        vecchia_email_contatto = persona.email
+        vecchia_email = Utenza.objects.get(pk=utenza.pk).email
+        nuova_email = modulo_modifica.cleaned_data.get('email')
+
+        if vecchia_email == nuova_email:
+            return errore_generico(request, me, titolo="Nessun cambiamento",
+                                   messaggio="Per cambiare indirizzo e-mail, inserisci un "
+                                             "indirizzo differente.",
+                                   torna_titolo="Credenziali",
+                                   torna_url=persona.url_profilo_credenziali)
+
+        if Utenza.objects.filter(email__icontains=nuova_email).first():
+            return errore_generico(request, me, titolo="E-mail già utilizzata",
+                                   messaggio="Esiste un altro utente in Gaia che utilizza "
+                                             "questa e-mail (%s). Impossibile associarla quindi "
+                                             "a %s." % (nuova_email, persona.nome_completo),
+                                   torna_titolo="Credenziali",
+                                   torna_url=persona.url_profilo_credenziali)
+
+        def _invia_notifica():
+            Messaggio.costruisci_e_invia(
+                oggetto="IMPORTANTE: Cambio e-mail di accesso a Gaia (credenziali)",
+                modello="email_credenziali_modificate.html",
+                corpo={
+                    "vecchia_email": vecchia_email,
+                    "nuova_email": nuova_email,
+                    "persona": persona,
+                    "autore": me,
+                },
+                mittente=me,
+                destinatari=[persona]
+            )
+
+        _invia_notifica()  # Invia notifica alla vecchia e-mail
+        Log.registra_modifiche(me, modulo_modifica)
+        modulo_modifica.save()  # Effettua le modifiche
+        persona.refresh_from_db()
+        if persona.email != vecchia_email_contatto:  # Se e-mail principale cambiata
+            _invia_notifica()  # Invia la notifica anche al nuovo indirizzo
+
+        return messaggio_generico(request, me, titolo="Credenziali modificate",
+                                  messaggio="Le credenziali di %s sono state correttamente aggiornate." % persona.nome,
+                                  torna_titolo="Credenziali",
+                                  torna_url=persona.url_profilo_credenziali)
+
     contesto = {
         "utenza": utenza,
-        "modulo": modulo_utenza,
+        "modulo_creazione": modulo_utenza,
+        "modulo_modifica": modulo_modifica
 
     }
     return 'anagrafica_profilo_credenziali.html', contesto
@@ -1563,3 +1613,122 @@ def admin_import_presidenti(request, me):
         "esiti": esiti,
     }
     return 'admin_import_presidenti.html', contesto
+
+
+@pagina_privata
+def admin_pulisci_email(request, me):
+
+    if not me.utenza.is_superuser:
+        return redirect(ERRORE_PERMESSI)
+
+    modulo = ModuloPulisciEmail(request.POST or None)
+    risultati = []
+
+    if modulo.is_valid():
+
+        indirizzi = modulo.cleaned_data['indirizzi']
+        indirizzi = indirizzi.split("\n")
+
+        for indirizzo in indirizzi:
+
+            indirizzo = indirizzo.strip()
+            if not indirizzo:  # Salta linee vuote
+                continue
+
+            persone = Persona.objects.filter(Q(email_contatto__iexact=indirizzo) | Q(utenza__email__iexact=indirizzo))
+
+            if not persone.exists():
+
+                risultati += [
+                    (indirizzo, 'text-danger', "Nessuna utenza trovata per questa e-mail.")
+                ]
+
+            else:  # Una o piu' persone ha questo indirizzo e-mail
+
+                for persona in persone:  # Per ogni persona
+
+                    try:
+                        delegati = persona.sede_riferimento().delegati_attuali(tipo__in=(UFFICIO_SOCI, UFFICIO_SOCI_UNITA)) |\
+                                    persona.sede_riferimento().comitato.delegati_attuali(tipo__in=(UFFICIO_SOCI, PRESIDENTE))
+                    except AttributeError:
+                        delegati = Persona.objects.none()
+
+                    if not delegati.exists():
+                        risultati += [
+                            (indirizzo, 'text-warning', "La persona trovata (%s) non ha delegati a cui notificare la "
+                                                        "disattivazione." % persona.codice_fiscale)
+                        ]
+                        continue
+
+                    email_contatto_corrotta = persona.email_contatto.lower() == indirizzo.lower()
+                    try:
+                        email_utenza_corrotta = persona.utenza.email.lower() == indirizzo.lower()
+                    except:  # Se non ha utenza
+                        email_utenza_corrotta = False
+
+                    # Se l'e-mail di contatto e' problematica...
+                    if email_contatto_corrotta:
+
+                        msg =   "(GAIA-%s) L'e-mail di contatto (%s) ha avuto un alto tasso di "\
+                                "ritorno ed è stata quindi cancellata per tutelare il servizio. "% (
+                            poco_fa().strftime("%d/%m/%Y %H:%M"), indirizzo
+                        )
+                        persona.note = "%s\n\n%s" % (persona.note, msg)
+                        persona.email_contatto = ""
+                        persona.save()
+                        Log.modifica(me, persona, "email_contatto", indirizzo, "")
+
+                    # Se l'e-mail di accesso e' problematica
+                    if email_utenza_corrotta:
+
+                        msg =   "(GAIA-%s) L'e-mail di accesso (%s) ha avuto un alto tasso di "\
+                                "ritorno ed è stata quindi cancellata l'utenza per tutela re il servizio. "\
+                                "E' quindi necessario abilitare l'accesso nuovamente creando delle nuove "\
+                                "credenziali per l'utente dalla sezione 'Credenziali' della sua scheda." % (
+                            poco_fa().strftime("%d/%m/%Y %H:%M"), indirizzo
+                        )
+                        persona.note = "%s\n\n%s" % (persona.note, msg)
+                        persona.save()
+                        persona.utenza.delete()
+                        Log.modifica(me, persona, "e-mail utenza", indirizzo, "")
+
+                    # Notifica delegati...
+                    if email_utenza_corrotta:
+                        Messaggio.costruisci_e_accoda(
+                            oggetto="AZIONE NECESSARIA: Credenziali di %s disattivate perché invalide" % persona.nome_completo,
+                            modello="email_admin_pulisci_email_utenza.html",
+                            corpo={
+                                "persona": persona,
+                                "vecchia_email": indirizzo,
+                                "operatore": me,
+                                "operazione_data": oggi()
+                            },
+                            destinatari=delegati,
+                        )
+                        risultati += [
+                            (indirizzo, 'text-success', "Disattivata utenza per persona %s. "
+                                                        "Delegati avvisati per e-mail." % persona.codice_fiscale)
+                        ]
+
+                    elif email_contatto_corrotta:
+                        Messaggio.costruisci_e_accoda(
+                            oggetto="E-mail di contatto di %s non valida" % persona.nome_completo,
+                            modello="email_admin_pulisci_email_contatto.html",
+                            corpo={
+                                "persona": persona,
+                                "vecchia_email": indirizzo,
+                                "operatore": me,
+                                "operazione_data": oggi()
+                            },
+                            destinatari=delegati,
+                        )
+                        risultati += [
+                            (indirizzo, 'text-success', "Rimossa e-mail di contatto di %s. "
+                                                        "Delegati avvisati per e-mail." % persona.codice_fiscale)
+                        ]
+
+    contesto = {
+        "risultati": risultati,
+        "modulo": modulo
+    }
+    return "admin_pulisci_email.html", contesto

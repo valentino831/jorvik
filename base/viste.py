@@ -9,6 +9,8 @@ from django.shortcuts import render, render_to_response, get_object_or_404, redi
 # Le viste base vanno qui.
 from django.views.decorators.cache import cache_page
 from django.apps import apps
+from django.views.decorators.clickjacking import xframe_options_exempt
+
 from anagrafica.costanti import LOCALE, PROVINCIALE, REGIONALE
 from anagrafica.models import Sede, Persona
 from anagrafica.permessi.costanti import ERRORE_PERMESSI, LETTURA, GESTIONE_SEDE
@@ -116,6 +118,8 @@ def informazioni_condizioni(request, me):
     """
     return 'base_informazioni_condizioni.html'\
 
+
+@xframe_options_exempt
 @pagina_pubblica
 def informazioni_sedi(request, me):
     """
@@ -127,19 +131,25 @@ def informazioni_sedi(request, me):
     }
     return 'base_informazioni_sedi.html', contesto
 
+
+@xframe_options_exempt
 @pagina_pubblica
 def informazioni_sede(request, me, slug):
     """
     Mostra dettagli sul comitato.
     """
+    vicini_km = 15
     sede = get_object_or_404(Sede, slug=slug)
-    vicini = sede.vicini(queryset=Sede.objects.all(), km=5)
+    vicini = sede.vicini(queryset=Sede.objects.all(), km=vicini_km)\
+        .exclude(pk__in=sede.unita_sottostanti().values_list('id', flat=True))\
+        .exclude(pk=sede.pk)
 
     contesto = {
         'sede': sede,
         'vicini': vicini,
         'da_mostrare': vicini | sede.ottieni_discendenti(includimi=True),
         'presidente': sede.presidente(),
+        'vicini_km': vicini_km,
     }
     return 'base_informazioni_sede.html', contesto
 
@@ -158,6 +168,11 @@ def pulisci_autorizzazioni(richieste):
     return pulite
 
 
+ORDINE_ASCENDENTE = 'creazione'
+ORDINE_DISCENDENTE = '-creazione'
+ORDINE_DEFAULT = ORDINE_DISCENDENTE
+
+
 @pagina_privata
 def autorizzazioni(request, me, content_type_pk=None):
     """
@@ -165,10 +180,6 @@ def autorizzazioni(request, me, content_type_pk=None):
     """
 
     richieste = me._autorizzazioni_in_attesa().exclude(oggetto_tipo_id__in=IGNORA_AUTORIZZAZIONI)
-
-    ORDINE_ASCENDENTE = 'creazione'
-    ORDINE_DISCENDENTE = '-creazione'
-    ORDINE_DEFAULT = ORDINE_ASCENDENTE
 
     if 'ordine' in request.GET:
         if request.GET['ordine'] == 'ASC':
