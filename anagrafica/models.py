@@ -364,6 +364,12 @@ class Persona(ModelloSemplice, ConMarcaTemporale, ConAllegati, ConVecchioID):
         """
         return Sede.objects.filter(pk__in=[x.sede.pk for x in self.appartenenze_attuali(**kwargs)])
 
+    def sedi_attuali_volontario(self, **kwargs):
+        """
+        Ottiene queryset di Sede di cui fa parte
+        """
+        return Sede.objects.filter(pk__in=[x.sede.pk for x in self.appartenenze_attuali(**kwargs).filter(membro=Appartenenza.VOLONTARIO)])
+
     def titoli_personali_confermati(self):
         """
         Ottiene queryset per TitoloPersonale con conferma approvata.

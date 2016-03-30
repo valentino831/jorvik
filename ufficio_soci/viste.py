@@ -295,7 +295,7 @@ def us_trasferimento(request, me):
             return errore_nessuna_appartenenza(request, me)
         if not me.permessi_almeno(trasf.persona, MODIFICA):
             return redirect(ERRORE_PERMESSI)
-        if trasf.destinazione in trasf.persona.sedi_attuali():
+        if trasf.destinazione in trasf.persona.sedi_attuali_volontario():
             modulo.add_error('destinazione', 'Il volontario è già appartenente a questa sede.')
         #elif trasf.destinazione.comitato != trasf.persona.sede_riferimento().comitato and True:##che in realta' e' il discriminatore delle elezioni
         #   return errore_generico(request, me, messaggio="Non puoi richiedere un trasferimento tra comitati durante il periodo elettorale", torna_url="/us/trasferimento/")
