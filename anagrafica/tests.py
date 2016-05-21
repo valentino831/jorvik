@@ -823,7 +823,7 @@ class TestFunzionaliEstensione(TestFunzionale):
 
         sessione.click_link_by_partial_text("Storico")
 
-        self.assertTrue(sessione.is_text_present("Volontario in Estensione "), msg="Estensione non presente")
+        self.assertTrue(sessione.is_text_present("Volontario in Estensione"), msg="Estensione non presente")
 
     def test_estensione_US(self):
 
@@ -860,7 +860,7 @@ class TestFunzionaliEstensione(TestFunzionale):
         sessione_v = self.sessione_utente(persona=volontario_da_estendere)
         sessione_v.click_link_by_partial_text("Storico")
 
-        self.assertTrue(sessione.is_text_present("Volontario in Estensione "), msg="Estensione non presente")
+        self.assertTrue(sessione.is_text_present("Volontario in Estensione"), msg="Estensione non presente")
 
 
 class TestFunzionaliTrasferimento(TestFunzionale):
@@ -896,7 +896,7 @@ class TestFunzionaliTrasferimento(TestFunzionale):
 
         sessione.click_link_by_partial_text("Storico")
 
-        self.assertTrue(sessione.is_text_present("Volontario in Estensione "), msg="Estensione non presente")
+        self.assertTrue(sessione.is_text_present("Volontario in Estensione"), msg="Estensione non presente")
 
 
 def test_estensione_US(self):
@@ -934,4 +934,4 @@ def test_estensione_US(self):
         sessione_v = self.sessione_utente(persona=volontario_da_trasferire)
         sessione_v.click_link_by_partial_text("Storico")
 
-        self.assertTrue(sessione.is_text_present("Volontario in Estensione "), msg="Estensione non presente")
+        self.assertTrue(sessione_v.is_text_present("Volontario in Estensione"), msg="Estensione non presente")
