@@ -15,4 +15,4 @@ sed "s/database = .*/database = $DBNAME/g" config/pgsql.cnf.sample > config/pgsq
 psql -U postgres -c "CREATE DATABASE $TEST_DBNAME;"
 psql -U postgres -c "CREATE EXTENSION postgis" -d $TEST_DBNAME
 psql -U postgres -c "CREATE EXTENSION postgis_topology" -d $TEST_DBNAME
-pg_restore -O -d $TEST_DBNAME ./base/test_jorvik.pgsql -j 4
+pg_restore -U postgres -O -d $TEST_DBNAME ./base/test_jorvik.pgsql -j 4
