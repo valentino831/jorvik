@@ -161,7 +161,7 @@ def crea_partecipazione(persona, turno):
 
 def crea_sessione():
     from splinter import Browser
-    browser = Browser(DRIVER_WEB, wait_time=7)
+    browser = Browser(DRIVER_WEB, wait_time=10)
     return browser
 
 

@@ -6,7 +6,7 @@ source .venv/bin/activate
 pip install -U pip wheel
 pip install -r requirements.txt --upgrade
 
-DBNAME="jorvik_$RANDOM"
+DBNAME="jorvik_$RANDOM$RANDOM"
 TEST_DBNAME="test_$DBNAME"
 
 # Use random name for the new database -- used for testing
