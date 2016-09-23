@@ -1,9 +1,9 @@
 node {
 
    stage 'Install dependencies'
+   checkout scm
    sh 'virtualenv --python=python3 .venv'
    sh 'source .venv/bin/activate'
-   sh 'echo $PATH'
    sh 'pip3 install -r requirements.txt'
 
    // Test stage
