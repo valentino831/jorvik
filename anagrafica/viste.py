@@ -500,7 +500,10 @@ def _rubrica_delegati(me, delega):
         tipo=delega,
         oggetto_tipo=ContentType.objects.get_for_model(Sede),
     ).values_list('pk', flat=True)
-    sedi_destinatari = me.sedi_deleghe_attuali().filter(deleghe__pk__in=deleghe).espandi()
+    sedi_delega = me.sedi_deleghe_attuali().filter(deleghe__pk__in=deleghe)
+    sedi_destinatari = []
+    for sede in sedi_delega:
+        sedi_destinatari.extend(sede.espandi(includi_me=True, pubblici=True).values_list('pk', flat=True))
     elenco = ElencoDelegati(sedi_destinatari, [delega], me)
     return elenco
 
