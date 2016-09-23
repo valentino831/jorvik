@@ -2,9 +2,7 @@ node {
 
    stage 'Install dependencies'
    checkout scm
-   sh 'virtualenv --python=python3 .venv'
-   sh 'source .venv/bin/activate'
-   sh 'pip3 install -r requirements.txt'
+   sh './config/jenkins.sh'
 
    // Test stage
    stage 'Test'
