@@ -6,6 +6,6 @@ node {
 
    // Test stage
    stage 'Test'
-   sh "source .venv/bin/activate && python manage.py test -v 3 -k --parallel 2"
+   sh "source .venv/bin/activate && xvfb-run python manage.py test -v 3 -k --parallel 4"
 
 }
