@@ -504,200 +504,44 @@ def _rubrica_delegati(me, delega):
     sedi_destinatari = []
     for sede in sedi_delega:
         sedi_destinatari.extend(sede.espandi(includi_me=True, pubblici=True).values_list('pk', flat=True))
-    elenco = ElencoDelegati(sedi_destinatari, [delega], me)
+    if delega != DELEGATO_OBIETTIVO_5:
+        elenco = ElencoDelegati(sedi_destinatari, [delega], me)
+    else:
+        elenco = ElencoGiovani(sedi_destinatari, me)
     return elenco
 
 
 @pagina_privata
-def delegato_rubrica_presidenti(request, me):
-    elenco = _rubrica_delegati(me, PRESIDENTE)
-
-    contesto = {
-        "elenco": elenco,
-        "elenco_nome": "Rubrica Presidenti"
+def rubrica_delegati(request, me, delega):
+    deleghe = {
+        'presidenti': (PRESIDENTE, 'Presidenti'),
+        'delegati_us': (UFFICIO_SOCI, 'Delegati Ufficio Soci'),
+        'delegati_us_unita': (UFFICIO_SOCI_UNITA, 'Delegati Ufficio Soci Unità Territoriale'),
+        'delegati_area': (DELEGATO_AREA, 'Delegati Ufficio Soci Unità Territoriale'),
+        'delegati_obiettivo_1': (DELEGATO_OBIETTIVO_1, 'Delegati Obiettivo I (Salute)'),
+        'delegati_obiettivo_2': (DELEGATO_OBIETTIVO_2, 'Delegati Obiettivo II (Sociale)'),
+        'delegati_obiettivo_3': (DELEGATO_OBIETTIVO_3, 'Delegati Obiettivo III (Emergenze)'),
+        'delegati_obiettivo_4': (DELEGATO_OBIETTIVO_4, 'Delegati Obiettivo IV (Principi)'),
+        'delegati_obiettivo_6': (DELEGATO_OBIETTIVO_6, 'Delegati Obiettivo VI (Sviluppo)'),
+        'responsabili_area': (RESPONSABILE_AREA, 'Responsabili d\'Area'),
+        'referenti_attivita': (REFERENTE, 'Referenti Attività'),
+        'referenti_gruppi': (REFERENTE, 'Referenti Gruppi'),
+        'centrali_operative': (DELEGATO_CO, 'Referenti Centrale Operativa'),
+        'responsabili_formazione': (RESPONSABILE_FORMAZIONE, 'Referenti Responsabili Formazione'),
+        'direttori_corsi': (DIRETTORE_CORSO, 'Direttori Corsi'),
+        'responsabili_autoparco': (RESPONSABILE_AUTOPARCO, 'Responsabili Autoparco'),
+        'giovani': (DELEGATO_OBIETTIVO_5, 'Rubrica Giovani'),
     }
-    return 'anagrafica_delegato_rubrica_delegati.html', contesto
 
+    if delega not in deleghe:
+        return redirect('/utente/')
 
-@pagina_privata
-def delegato_rubrica_delegati_us(request, me):
-    elenco = _rubrica_delegati(me, UFFICIO_SOCI)
-
-    contesto = {
-        "elenco": elenco,
-        "elenco_nome": "Rubrica Delegati Ufficio Soci"
-    }
-    return 'anagrafica_delegato_rubrica_delegati.html', contesto
-
-
-@pagina_privata
-def delegato_rubrica_delegati_us_unita_territoriale(request, me):
-    elenco = _rubrica_delegati(me, UFFICIO_SOCI_UNITA)
+    delega, titolo = deleghe[delega]
+    elenco = _rubrica_delegati(me, delega)
 
     contesto = {
         "elenco": elenco,
-        "elenco_nome": "Rubrica Delegati Ufficio Soci Unità Territoriale"
-    }
-    return 'anagrafica_delegato_rubrica_delegati.html', contesto
-
-
-@pagina_privata
-def delegato_rubrica_delegati_area(request, me):
-    elenco = _rubrica_delegati(me, DELEGATO_AREA)
-
-    contesto = {
-        "elenco": elenco,
-        "elenco_nome": "Rubrica Delegati d'Area"
-    }
-    return 'anagrafica_delegato_rubrica_delegati.html', contesto
-
-
-@pagina_privata
-def delegato_rubrica_delegati_obiettivo_1(request, me):
-    elenco = _rubrica_delegati(me, DELEGATO_OBIETTIVO_1)
-
-    contesto = {
-        "elenco": elenco,
-        "elenco_nome": "Rubrica Delegati Obiettivo I (Salute)"
-    }
-    return 'anagrafica_delegato_rubrica_delegati.html', contesto
-
-
-@pagina_privata
-def delegato_rubrica_delegati_obiettivo_2(request, me):
-    elenco = _rubrica_delegati(me, DELEGATO_OBIETTIVO_2)
-
-    contesto = {
-        "elenco": elenco,
-        "elenco_nome": "Rubrica Delegati Obiettivo II (Sociale)",
-    }
-    return 'anagrafica_delegato_rubrica_delegati.html', contesto
-
-
-@pagina_privata
-def delegato_rubrica_delegati_obiettivo_3(request, me):
-    elenco = _rubrica_delegati(me, DELEGATO_OBIETTIVO_3)
-
-    contesto = {
-        "elenco": elenco,
-        "elenco_nome": "Rubrica Delegati Obiettivo III (Emergenze)",
-    }
-    return 'anagrafica_delegato_rubrica_delegati.html', contesto
-
-
-@pagina_privata
-def delegato_rubrica_delegati_obiettivo_4(request, me):
-    elenco = _rubrica_delegati(me, DELEGATO_OBIETTIVO_4)
-
-    contesto = {
-        "elenco": elenco,
-        "elenco_nome": "Rubrica Delegati Obiettivo IV (Principi)",
-    }
-    return 'anagrafica_delegato_rubrica_delegati.html', contesto
-
-
-@pagina_privata
-def delegato_rubrica_delegati_obiettivo_6(request, me):
-    elenco = _rubrica_delegati(me, DELEGATO_OBIETTIVO_6)
-
-    contesto = {
-        "elenco": elenco,
-        "elenco_nome": "Rubrica Delegati Obiettivo VI (Sviluppo)",
-    }
-    return 'anagrafica_delegato_rubrica_delegati.html', contesto
-
-
-@pagina_privata
-def delegato_rubrica_responsabili_area(request, me):
-    elenco = _rubrica_delegati(me, RESPONSABILE_AREA)
-
-    contesto = {
-        "elenco": elenco,
-        "elenco_nome": "Rubrica Responsabili d'Area",
-    }
-    return 'anagrafica_delegato_rubrica_delegati.html', contesto
-
-
-@pagina_privata
-def delegato_rubrica_referenti_attivita(request, me):
-    elenco = _rubrica_delegati(me, REFERENTE)
-
-    contesto = {
-        "elenco": elenco,
-        "elenco_nome": "Rubrica Referenti Attività",
-    }
-    return 'anagrafica_delegato_rubrica_delegati.html', contesto
-
-
-@pagina_privata
-def delegato_rubrica_referenti_gruppo(request, me):
-    elenco = _rubrica_delegati(me, REFERENTE_GRUPPO)
-
-    contesto = {
-        "elenco": elenco,
-        "elenco_nome": "Rubrica Referenti Gruppi",
-    }
-    return 'anagrafica_delegato_rubrica_delegati.html', contesto
-
-
-@pagina_privata
-def delegato_rubrica_delegati_centrale_operativa(request, me):
-    elenco = _rubrica_delegati(me, DELEGATO_CO)
-
-    contesto = {
-        "elenco": elenco,
-        "elenco_nome": "Rubrica Referenti Centrale Operativa",
-    }
-    return 'anagrafica_delegato_rubrica_delegati.html', contesto
-
-
-@pagina_privata
-def delegato_rubrica_responsabili_formazione(request, me):
-    elenco = _rubrica_delegati(me, RESPONSABILE_FORMAZIONE)
-
-    contesto = {
-        "elenco": elenco,
-        "elenco_nome": "Rubrica Responsabili Formazione",
-    }
-    return 'anagrafica_delegato_rubrica_delegati.html', contesto
-
-
-@pagina_privata
-def delegato_rubrica_direttori_corso(request, me):
-    elenco = _rubrica_delegati(me, DIRETTORE_CORSO)
-
-    contesto = {
-        "elenco": elenco,
-        "elenco_nome": "Rubrica Direttori Corsi",
-    }
-    return 'anagrafica_delegato_rubrica_delegati.html', contesto
-
-
-@pagina_privata
-def delegato_rubrica_responsabili_autoparco(request, me):
-    elenco = _rubrica_delegati(me, RESPONSABILE_AUTOPARCO)
-
-    contesto = {
-        "elenco": elenco,
-        "elenco_nome": "Rubrica Responsabili Autoparco",
-    }
-    return 'anagrafica_delegato_rubrica_delegati.html', contesto
-
-
-
-@pagina_privata
-def giovane_rubrica_giovani(request, me):
-    deleghe_giovane = me.deleghe_attuali().filter(
-        tipo=DELEGATO_OBIETTIVO_5,
-        oggetto_tipo=ContentType.objects.get_for_model(Sede),
-    ).values_list('pk', flat=True)
-    sedi_destinatari = me.sedi_deleghe_attuali().filter(deleghe__pk__in=deleghe_giovane).espandi()
-
-    elenco = ElencoGiovani(sedi_destinatari, me)
-
-    contesto = {
-        "elenco": elenco,
-        "elenco_nome": "Rubrica Giovani"
+        "elenco_nome": ' '.join(("Rubrica", titolo))
     }
     return 'anagrafica_delegato_rubrica_delegati.html', contesto
 
