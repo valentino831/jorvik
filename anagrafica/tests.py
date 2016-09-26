@@ -6,8 +6,12 @@ from lxml import html
 from anagrafica.costanti import LOCALE, PROVINCIALE, REGIONALE, NAZIONALE, TERRITORIALE
 from anagrafica.forms import ModuloCreazioneEstensione, ModuloNegaEstensione, ModuloProfiloModificaAnagrafica
 from anagrafica.models import Appartenenza, Documento, Delega, Dimissione
-from anagrafica.permessi.applicazioni import UFFICIO_SOCI, PRESIDENTE, UFFICIO_SOCI_UNITA
+from anagrafica.permessi.applicazioni import UFFICIO_SOCI, PRESIDENTE, UFFICIO_SOCI_UNITA, DELEGATO_OBIETTIVO_1, \
+    DELEGATO_OBIETTIVO_2, DELEGATO_OBIETTIVO_3, DELEGATO_OBIETTIVO_4, DELEGATO_OBIETTIVO_5, DELEGATO_OBIETTIVO_6, \
+    DELEGATO_AREA, UFFICIO_SOCI, UFFICIO_SOCI_UNITA, RESPONSABILE_AREA, REFERENTE, REFERENTE_GRUPPO, DELEGATO_CO, \
+    RESPONSABILE_FORMAZIONE, DIRETTORE_CORSO, RESPONSABILE_AUTOPARCO
 from anagrafica.permessi.costanti import MODIFICA, ELENCHI_SOCI, LETTURA, GESTIONE_SOCI
+from anagrafica.viste import _rubrica_delegati
 from autenticazione.models import Utenza
 from autenticazione.utils_test import TestFunzionale
 from base.utils import poco_fa
@@ -735,6 +739,89 @@ class TestAnagrafica(TestCase):
             msg="Il delegato Maletto puo gestire volontario"
         )
 
+    def test_rubriche_delegati(self):
+        italia = crea_sede(estensione=NAZIONALE)
+        toscana = crea_sede(estensione=REGIONALE, genitore=italia)
+        veneto = crea_sede(estensione=REGIONALE, genitore=italia)
+        emilia_romagna = crea_sede(estensione=REGIONALE, genitore=italia)
+        firenze = crea_sede(estensione=PROVINCIALE, genitore=toscana)
+        dicomano = crea_sede(estensione=TERRITORIALE, genitore=firenze)
+        empoli = crea_sede(estensione=LOCALE, genitore=toscana)
+        territorio_empoli = crea_sede(estensione=TERRITORIALE, genitore=empoli)
+        delegato_nazionale = crea_persona()
+        delegato_nazionale_no_6 = crea_persona()
+        delegato_toscana = crea_persona()
+        delegato_firenze = crea_persona()
+        delegato_firenze_no_6 = crea_persona()
+        delegato_dicomano = crea_persona()
+        delegato_empoli = crea_persona()
+        delegato_territorio_empoli = crea_persona()
+        delegato_veneto = crea_persona()
+        delegato_emilia_romagna = crea_persona()
+        Delega.objects.create(persona=delegato_nazionale, tipo=DELEGATO_OBIETTIVO_6, oggetto=italia, inizio=poco_fa())
+        Delega.objects.create(persona=delegato_nazionale_no_6, tipo=RESPONSABILE_AREA, oggetto=italia, inizio=poco_fa())
+        Delega.objects.create(persona=delegato_toscana, tipo=DELEGATO_OBIETTIVO_6, oggetto=toscana, inizio=poco_fa())
+        Delega.objects.create(persona=delegato_firenze, tipo=DELEGATO_OBIETTIVO_6, oggetto=firenze, inizio=poco_fa())
+        Delega.objects.create(persona=delegato_firenze_no_6, tipo=DELEGATO_OBIETTIVO_5, oggetto=firenze, inizio=poco_fa())
+        Delega.objects.create(persona=delegato_dicomano, tipo=DELEGATO_OBIETTIVO_6, oggetto=dicomano, inizio=poco_fa())
+        Delega.objects.create(persona=delegato_empoli, tipo=DELEGATO_OBIETTIVO_6, oggetto=empoli, inizio=poco_fa())
+        Delega.objects.create(persona=delegato_territorio_empoli, tipo=DELEGATO_OBIETTIVO_6, oggetto=territorio_empoli, inizio=poco_fa())
+        # Rubrica delegati obiettivo 6 per il delegato nazionale
+        elenco = _rubrica_delegati(delegato_nazionale, DELEGATO_OBIETTIVO_6).risultati()
+        self.assertEqual(5, len(elenco))
+        self.assertNotIn(delegato_nazionale, elenco)
+        self.assertIn(delegato_toscana, elenco)
+        self.assertIn(delegato_firenze, elenco)
+        self.assertIn(delegato_dicomano, elenco)
+        self.assertIn(delegato_empoli, elenco)
+        self.assertIn(delegato_territorio_empoli, elenco)
+        self.assertNotIn(delegato_veneto, elenco)
+        self.assertNotIn(delegato_emilia_romagna, elenco)
+        self.assertNotIn(delegato_firenze_no_6, elenco)
+        self.assertNotIn(delegato_nazionale_no_6, elenco)
+        # Rubrica delegati obiettivo 5 per il delegato nazionale (è vuoto)
+        elenco = _rubrica_delegati(delegato_nazionale, DELEGATO_OBIETTIVO_5).risultati()
+        self.assertEqual(0, len(elenco))
+        # Rubrica delegati obiettivo 6 per il delegato regionale toscana
+        elenco = _rubrica_delegati(delegato_toscana, DELEGATO_OBIETTIVO_6).risultati()
+        self.assertEqual(4, len(elenco))
+        self.assertNotIn(delegato_nazionale, elenco)
+        self.assertNotIn(delegato_toscana, elenco)
+        self.assertIn(delegato_firenze, elenco)
+        self.assertIn(delegato_dicomano, elenco)
+        self.assertIn(delegato_empoli, elenco)
+        self.assertIn(delegato_territorio_empoli, elenco)
+        self.assertNotIn(delegato_veneto, elenco)
+        self.assertNotIn(delegato_emilia_romagna, elenco)
+        self.assertNotIn(delegato_firenze_no_6, elenco)
+        self.assertNotIn(delegato_nazionale_no_6, elenco)
+        # Rubrica delegati obiettivo 6 per il delegato provinciale firenze
+        elenco = _rubrica_delegati(delegato_firenze, DELEGATO_OBIETTIVO_6).risultati()
+        self.assertEqual(1, len(elenco))
+        self.assertNotIn(delegato_nazionale, elenco)
+        self.assertNotIn(delegato_toscana, elenco)
+        self.assertNotIn(delegato_firenze, elenco)
+        self.assertIn(delegato_dicomano, elenco)
+        self.assertNotIn(delegato_empoli, elenco)
+        self.assertNotIn(delegato_territorio_empoli, elenco)
+        self.assertNotIn(delegato_veneto, elenco)
+        self.assertNotIn(delegato_emilia_romagna, elenco)
+        self.assertNotIn(delegato_firenze_no_6, elenco)
+        self.assertNotIn(delegato_nazionale_no_6, elenco)
+        # Rubrica delegati obiettivo 6 per il delegato locale
+        elenco = _rubrica_delegati(delegato_empoli, DELEGATO_OBIETTIVO_6).risultati()
+        self.assertEqual(1, len(elenco))
+        self.assertNotIn(delegato_nazionale, elenco)
+        self.assertNotIn(delegato_toscana, elenco)
+        self.assertNotIn(delegato_firenze, elenco)
+        self.assertNotIn(delegato_dicomano, elenco)
+        self.assertNotIn(delegato_empoli, elenco)
+        self.assertIn(delegato_territorio_empoli, elenco)
+        self.assertNotIn(delegato_veneto, elenco)
+        self.assertNotIn(delegato_emilia_romagna, elenco)
+        self.assertNotIn(delegato_firenze_no_6, elenco)
+        self.assertNotIn(delegato_nazionale_no_6, elenco)
+
 
 class TestFunzionaliAnagrafica(TestFunzionale):
 
@@ -908,3 +995,34 @@ class TestFunzionaliAnagrafica(TestFunzionale):
         modulo = ModuloProfiloModificaAnagrafica(data, instance=p2)
         self.assertEqual(modulo.is_valid(), True)
         self.assertEqual(p2.codice_fiscale, vecchio_codice_fiscale)
+
+    def test_rubriche_delegati(self):
+        EMAIL = email_fittizzia()
+        italia = crea_sede(estensione=NAZIONALE)
+        toscana = crea_sede(estensione=REGIONALE, genitore=italia)
+        veneto = crea_sede(estensione=REGIONALE, genitore=italia)
+        emilia_romagna = crea_sede(estensione=REGIONALE, genitore=italia)
+        firenze = crea_sede(estensione=PROVINCIALE, genitore=toscana)
+        dicomano = crea_sede(estensione=TERRITORIALE, genitore=firenze)
+        empoli = crea_sede(estensione=LOCALE, genitore=toscana)
+        territorio_empoli = crea_sede(estensione=TERRITORIALE, genitore=empoli)
+        delegato_nazionale = crea_persona()
+        delegato_nazionale_no_6 = crea_persona()
+        delegato_toscana = crea_persona()
+        delegato_firenze = crea_persona()
+        delegato_firenze_no_6 = crea_persona()
+        delegato_dicomano = crea_persona()
+        delegato_empoli = crea_persona()
+        delegato_territorio_empoli = crea_persona()
+        delegato_veneto = crea_persona()
+        delegato_emilia_romagna = crea_persona()
+        Delega.objects.create(persona=delegato_nazionale, tipo=DELEGATO_OBIETTIVO_6, oggetto=italia, inizio=poco_fa())
+        Delega.objects.create(persona=delegato_nazionale_no_6, tipo=RESPONSABILE_AREA, oggetto=italia, inizio=poco_fa())
+        Delega.objects.create(persona=delegato_toscana, tipo=DELEGATO_OBIETTIVO_6, oggetto=toscana, inizio=poco_fa())
+        Delega.objects.create(persona=delegato_firenze, tipo=DELEGATO_OBIETTIVO_6, oggetto=firenze, inizio=poco_fa())
+        Delega.objects.create(persona=delegato_firenze_no_6, tipo=DELEGATO_OBIETTIVO_5, oggetto=firenze, inizio=poco_fa())
+        Delega.objects.create(persona=delegato_dicomano, tipo=DELEGATO_OBIETTIVO_6, oggetto=dicomano, inizio=poco_fa())
+        Delega.objects.create(persona=delegato_empoli, tipo=DELEGATO_OBIETTIVO_6, oggetto=empoli, inizio=poco_fa())
+        Delega.objects.create(persona=delegato_territorio_empoli, tipo=DELEGATO_OBIETTIVO_6, oggetto=territorio_empoli, inizio=poco_fa())
+        utenza = crea_utenza(persona=delegato_nazionale, email=EMAIL)
+        sessione_delegato_nazionale = self.sessione_utente(utente=utenza)
