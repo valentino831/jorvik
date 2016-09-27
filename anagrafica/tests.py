@@ -18,6 +18,7 @@ from base.utils import poco_fa
 from base.utils_tests import crea_persona_sede_appartenenza, crea_persona, crea_sede, crea_appartenenza, email_fittizzia, \
     crea_utenza
 from posta.models import Messaggio
+from ufficio_soci.forms import ModuloElencoVolontari
 
 
 class TestAnagrafica(TestCase):
@@ -780,7 +781,14 @@ class TestAnagrafica(TestCase):
         self.assertNotIn(delegato_firenze_no_6, elenco)
         self.assertNotIn(delegato_nazionale_no_6, elenco)
         # Rubrica delegati obiettivo 5 per il delegato nazionale (è vuoto)
-        elenco = _rubrica_delegati(delegato_nazionale, DELEGATO_OBIETTIVO_5).risultati()
+        elenco = _rubrica_delegati(delegato_nazionale, DELEGATO_OBIETTIVO_5)
+        modulo_riempito = ModuloElencoVolontari({
+            'includi_estesi' : ModuloElencoVolontari.SI
+        })
+        if not modulo_riempito.is_valid():
+            raise ValueError("Modulo non valido (inaspettatamente)")
+        elenco.modulo_riempito = modulo_riempito
+        elenco = elenco.risultati()
         self.assertEqual(0, len(elenco))
         # Rubrica delegati obiettivo 6 per il delegato regionale toscana
         elenco = _rubrica_delegati(delegato_toscana, DELEGATO_OBIETTIVO_6).risultati()
@@ -1026,3 +1034,4 @@ class TestFunzionaliAnagrafica(TestFunzionale):
         Delega.objects.create(persona=delegato_territorio_empoli, tipo=DELEGATO_OBIETTIVO_6, oggetto=territorio_empoli, inizio=poco_fa())
         utenza = crea_utenza(persona=delegato_nazionale, email=EMAIL)
         sessione_delegato_nazionale = self.sessione_utente(utente=utenza)
+        
