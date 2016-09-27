@@ -40,7 +40,7 @@ def menu(request):
             delega, titolo = informazioni
             if delega in deleghe_attuali:
                 RUBRICA_BASE.append(
-                    (titolo, "fa-book", "".join(("/utente/rubrica/", slug)))
+                    (titolo, "fa-book", "".join(("/utente/rubrica/", slug, '/')))
                 )
 
 

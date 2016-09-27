@@ -1034,4 +1034,12 @@ class TestFunzionaliAnagrafica(TestFunzionale):
         Delega.objects.create(persona=delegato_territorio_empoli, tipo=DELEGATO_OBIETTIVO_6, oggetto=territorio_empoli, inizio=poco_fa())
         utenza = crea_utenza(persona=delegato_nazionale, email=EMAIL)
         sessione_delegato_nazionale = self.sessione_utente(utente=utenza)
-        
+        sessione_delegato_nazionale.visit("%s%s" % (self.live_server_url, '/utente/'))
+        self.assertTrue(sessione_delegato_nazionale.is_text_present("Rubrica"))
+        self.assertTrue(sessione_delegato_nazionale.is_text_present("Referenti"))
+        self.assertTrue(sessione_delegato_nazionale.is_text_present("Volontari"))
+        self.assertTrue(sessione_delegato_nazionale.is_text_present("Delegati Obiettivo VI (Sviluppo)"))
+        sessione_delegato_nazionale.click_link_by_partial_href('delegati_obiettivo_6')
+        with sessione_delegato_nazionale.get_iframe(0) as iframe:
+            pass
+        self.assertTrue(sessione_delegato_nazionale.is_text_present(delegato_toscana.nome, wait_time=10))
