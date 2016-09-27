@@ -37,9 +37,10 @@ def menu(request):
 
     if deleghe_attuali:
         for slug, informazioni in DELEGHE_INFORMAZIONI.items():
-            if informazioni[0] in deleghe_attuali:
+            delega, titolo = informazioni
+            if delega in deleghe_attuali:
                 RUBRICA_BASE.append(
-                    (informazioni[1], "fa-book", "".join(("/utente/rubrica/", slug)))
+                    (titolo, "fa-book", "".join(("/utente/rubrica/", slug)))
                 )
 
 
