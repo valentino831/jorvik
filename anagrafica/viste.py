@@ -32,7 +32,7 @@ from anagrafica.models import Persona, Documento, Telefono, Estensione, Delega, 
 from anagrafica.permessi.applicazioni import PRESIDENTE, UFFICIO_SOCI, PERMESSI_NOMI_DICT, DELEGATO_OBIETTIVO_1, \
     DELEGATO_OBIETTIVO_2, DELEGATO_OBIETTIVO_3, DELEGATO_OBIETTIVO_4, DELEGATO_OBIETTIVO_5, DELEGATO_OBIETTIVO_6, \
     RESPONSABILE_FORMAZIONE, RESPONSABILE_AUTOPARCO, DELEGATO_CO, UFFICIO_SOCI_UNITA, DELEGHE_RUBRICA, REFERENTE, \
-    RESPONSABILE_AREA, DIRETTORE_CORSO, DELEGATO_AREA, REFERENTE_GRUPPO
+    RESPONSABILE_AREA, DIRETTORE_CORSO, DELEGATO_AREA, REFERENTE_GRUPPO, DELEGHE_INFORMAZIONI
 from anagrafica.permessi.costanti import ERRORE_PERMESSI, COMPLETO, MODIFICA, LETTURA, GESTIONE_SEDE, GESTIONE, \
     ELENCHI_SOCI, GESTIONE_ATTIVITA, GESTIONE_ATTIVITA_AREA, GESTIONE_CORSO
 from anagrafica.permessi.incarichi import INCARICO_GESTIONE_RISERVE, INCARICO_GESTIONE_TITOLI, \
@@ -90,26 +90,6 @@ MODULI = {
     STEP_ANAGRAFICA: ModuloStepAnagrafica,
     STEP_CREDENZIALI: ModuloStepCredenziali,
     STEP_FINE: None,
-}
-
-DELEGHE_INFORMAZIONI = {
-    'presidenti': (PRESIDENTE, 'Presidenti'),
-    'delegati_us': (UFFICIO_SOCI, 'Delegati Ufficio Soci'),
-    'delegati_us_unita': (UFFICIO_SOCI_UNITA, 'Delegati Ufficio Soci Unità Territoriale'),
-    'delegati_area': (DELEGATO_AREA, 'Delegati Ufficio Soci Unità Territoriale'),
-    'delegati_obiettivo_1': (DELEGATO_OBIETTIVO_1, 'Delegati Obiettivo I (Salute)'),
-    'delegati_obiettivo_2': (DELEGATO_OBIETTIVO_2, 'Delegati Obiettivo II (Sociale)'),
-    'delegati_obiettivo_3': (DELEGATO_OBIETTIVO_3, 'Delegati Obiettivo III (Emergenze)'),
-    'delegati_obiettivo_4': (DELEGATO_OBIETTIVO_4, 'Delegati Obiettivo IV (Principi)'),
-    'delegati_obiettivo_6': (DELEGATO_OBIETTIVO_6, 'Delegati Obiettivo VI (Sviluppo)'),
-    'responsabili_area': (RESPONSABILE_AREA, 'Responsabili d\'Area'),
-    'referenti_attivita': (REFERENTE, 'Referenti Attività'),
-    'referenti_gruppi': (REFERENTE, 'Referenti Gruppi'),
-    'centrali_operative': (DELEGATO_CO, 'Referenti Centrale Operativa'),
-    'responsabili_formazione': (RESPONSABILE_FORMAZIONE, 'Referenti Responsabili Formazione'),
-    'direttori_corsi': (DIRETTORE_CORSO, 'Direttori Corsi'),
-    'responsabili_autoparco': (RESPONSABILE_AUTOPARCO, 'Responsabili Autoparco'),
-    'giovani': (DELEGATO_OBIETTIVO_5, 'Rubrica Giovani'),
 }
 
 

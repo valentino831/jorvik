@@ -57,3 +57,23 @@ DELEGHE_RUBRICA = (
 )
 
 PERMESSI_NOMI_DICT = dict(PERMESSI_NOMI)
+
+DELEGHE_INFORMAZIONI = {
+    'presidenti': (PRESIDENTE, 'Presidenti'),
+    'delegati_us': (UFFICIO_SOCI, 'Delegati Ufficio Soci'),
+    'delegati_us_unita': (UFFICIO_SOCI_UNITA, 'Delegati Ufficio Soci Unità Territoriale'),
+    'delegati_area': (DELEGATO_AREA, 'Delegati Ufficio Soci Unità Territoriale'),
+    'delegati_obiettivo_1': (DELEGATO_OBIETTIVO_1, 'Delegati Obiettivo I (Salute)'),
+    'delegati_obiettivo_2': (DELEGATO_OBIETTIVO_2, 'Delegati Obiettivo II (Sociale)'),
+    'delegati_obiettivo_3': (DELEGATO_OBIETTIVO_3, 'Delegati Obiettivo III (Emergenze)'),
+    'delegati_obiettivo_4': (DELEGATO_OBIETTIVO_4, 'Delegati Obiettivo IV (Principi)'),
+    'delegati_obiettivo_6': (DELEGATO_OBIETTIVO_6, 'Delegati Obiettivo VI (Sviluppo)'),
+    'responsabili_area': (RESPONSABILE_AREA, 'Responsabili d\'Area'),
+    'referenti_attivita': (REFERENTE, 'Referenti Attività'),
+    'referenti_gruppi': (REFERENTE, 'Referenti Gruppi'),
+    'centrali_operative': (DELEGATO_CO, 'Referenti Centrale Operativa'),
+    'responsabili_formazione': (RESPONSABILE_FORMAZIONE, 'Referenti Responsabili Formazione'),
+    'direttori_corsi': (DIRETTORE_CORSO, 'Direttori Corsi'),
+    'responsabili_autoparco': (RESPONSABILE_AUTOPARCO, 'Responsabili Autoparco'),
+    'giovani': (DELEGATO_OBIETTIVO_5, 'Giovani'),
+}
