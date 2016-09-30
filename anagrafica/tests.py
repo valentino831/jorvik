@@ -829,7 +829,32 @@ class TestAnagrafica(TestCase):
         self.assertNotIn(delegato_emilia_romagna, elenco)
         self.assertNotIn(delegato_firenze_no_6, elenco)
         self.assertNotIn(delegato_nazionale_no_6, elenco)
-
+        # Rubrica delegati obiettivo 6 per il delegato territoriale
+        elenco = _rubrica_delegati(delegato_dicomano, DELEGATO_OBIETTIVO_6).risultati()
+        self.assertEqual(0, len(elenco))
+        self.assertNotIn(delegato_nazionale, elenco)
+        self.assertNotIn(delegato_toscana, elenco)
+        self.assertNotIn(delegato_firenze, elenco)
+        self.assertNotIn(delegato_dicomano, elenco)
+        self.assertNotIn(delegato_empoli, elenco)
+        self.assertNotIn(delegato_territorio_empoli, elenco)
+        self.assertNotIn(delegato_veneto, elenco)
+        self.assertNotIn(delegato_emilia_romagna, elenco)
+        self.assertNotIn(delegato_firenze_no_6, elenco)
+        self.assertNotIn(delegato_nazionale_no_6, elenco)
+        # Rubrica delegati obiettivo 6 per il delegato territoriale
+        elenco = _rubrica_delegati(delegato_territorio_empoli, DELEGATO_OBIETTIVO_6).risultati()
+        self.assertEqual(0, len(elenco))
+        self.assertNotIn(delegato_nazionale, elenco)
+        self.assertNotIn(delegato_toscana, elenco)
+        self.assertNotIn(delegato_firenze, elenco)
+        self.assertNotIn(delegato_dicomano, elenco)
+        self.assertNotIn(delegato_empoli, elenco)
+        self.assertNotIn(delegato_territorio_empoli, elenco)
+        self.assertNotIn(delegato_veneto, elenco)
+        self.assertNotIn(delegato_emilia_romagna, elenco)
+        self.assertNotIn(delegato_firenze_no_6, elenco)
+        self.assertNotIn(delegato_nazionale_no_6, elenco)
 
 class TestFunzionaliAnagrafica(TestFunzionale):
 
@@ -1085,3 +1110,12 @@ class TestFunzionaliAnagrafica(TestFunzionale):
             self.assertFalse(iframe.is_text_present(delegato_firenze_no_6.cognome))
             self.assertFalse(iframe.is_text_present(delegato_veneto.nome))
             self.assertFalse(iframe.is_text_present(delegato_veneto.cognome))
+        # Testa la rubrica per il delegato territoriale dicomano
+        EMAIL = email_fittizzia()
+        utenza = crea_utenza(persona=delegato_dicomano, email=EMAIL)
+        sessione_delegato_dicomano = self.sessione_utente(utente=utenza)
+        sessione_delegato_dicomano.visit("%s%s" % (self.live_server_url, '/utente/'))
+        self.assertTrue(sessione_delegato_dicomano.is_text_present("Rubrica"))
+        self.assertTrue(sessione_delegato_dicomano.is_text_present("Referenti"))
+        self.assertTrue(sessione_delegato_dicomano.is_text_present("Volontari"))
+        self.assertFalse(sessione_delegato_dicomano.is_text_present("Delegati Obiettivo VI (Sviluppo)"))
