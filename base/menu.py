@@ -1,4 +1,7 @@
-from anagrafica.costanti import REGIONALE
+from django.contrib.contenttypes.models import ContentType
+
+from anagrafica.costanti import REGIONALE, TERRITORIALE
+from anagrafica.models import Sede
 from anagrafica.permessi.applicazioni import DELEGATO_OBIETTIVO_1, DELEGATO_OBIETTIVO_2, DELEGATO_OBIETTIVO_3, DELEGATO_OBIETTIVO_4, \
     DELEGATO_OBIETTIVO_5, DELEGATO_OBIETTIVO_6, PRESIDENTE, \
     UFFICIO_SOCI, UFFICIO_SOCI_UNITA, DELEGATO_AREA, RESPONSABILE_AREA, \
@@ -25,8 +28,13 @@ def menu(request):
     me = request.me if hasattr(request, 'me') else None
 
 
-    deleghe_attuali = me.deleghe_attuali().distinct().values_list('tipo', flat=True) if me else None
-
+    sedi_deleghe_attuali = me.sedi_deleghe_attuali().exclude(estensione=TERRITORIALE) if me else None
+    deleghe_attuali = None
+    if me:
+        deleghe_attuali = me.deleghe_attuali(
+            oggetto_tipo=ContentType.objects.get_for_model(Sede),
+            oggetto_id__in=sedi_deleghe_attuali
+        ).distinct().values_list('tipo', flat=True)
 
     gestione_corsi_sede = me.ha_permesso(GESTIONE_CORSI_SEDE) if me else False
 
