@@ -522,7 +522,7 @@ def rubrica_delegati(request, me, delega):
 
     contesto = {
         "elenco": elenco,
-        "elenco_nome": ' '.join(("Rubrica", titolo))
+        "elenco_nome": "Rubrica {}".format(titolo)
     }
     return 'anagrafica_delegato_rubrica_delegati.html', contesto
 
