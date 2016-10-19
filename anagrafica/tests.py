@@ -768,7 +768,7 @@ class TestAnagrafica(TestCase):
         Delega.objects.create(persona=delegato_empoli, tipo=DELEGATO_OBIETTIVO_6, oggetto=empoli, inizio=poco_fa())
         Delega.objects.create(persona=delegato_territorio_empoli, tipo=DELEGATO_OBIETTIVO_6, oggetto=territorio_empoli, inizio=poco_fa())
         # Rubrica delegati obiettivo 6 per il delegato nazionale
-        elenco = _rubrica_delegati(delegato_nazionale, DELEGATO_OBIETTIVO_6).risultati()
+        elenco = _rubrica_delegati(delegato_nazionale, DELEGATO_OBIETTIVO_6)[0].risultati()
         self.assertEqual(5, len(elenco))
         self.assertNotIn(delegato_nazionale, elenco)
         self.assertIn(delegato_toscana, elenco)
@@ -781,7 +781,7 @@ class TestAnagrafica(TestCase):
         self.assertNotIn(delegato_firenze_no_6, elenco)
         self.assertNotIn(delegato_nazionale_no_6, elenco)
         # Rubrica delegati obiettivo 5 per il delegato nazionale (è vuoto)
-        elenco = _rubrica_delegati(delegato_nazionale, DELEGATO_OBIETTIVO_5)
+        elenco = _rubrica_delegati(delegato_nazionale, DELEGATO_OBIETTIVO_5)[0]
         modulo_riempito = ModuloElencoVolontari({
             'includi_estesi' : ModuloElencoVolontari.SI
         })
@@ -791,7 +791,7 @@ class TestAnagrafica(TestCase):
         elenco = elenco.risultati()
         self.assertEqual(0, len(elenco))
         # Rubrica delegati obiettivo 6 per il delegato regionale toscana
-        elenco = _rubrica_delegati(delegato_toscana, DELEGATO_OBIETTIVO_6).risultati()
+        elenco = _rubrica_delegati(delegato_toscana, DELEGATO_OBIETTIVO_6)[0].risultati()
         self.assertEqual(4, len(elenco))
         self.assertNotIn(delegato_nazionale, elenco)
         self.assertNotIn(delegato_toscana, elenco)
@@ -804,7 +804,7 @@ class TestAnagrafica(TestCase):
         self.assertNotIn(delegato_firenze_no_6, elenco)
         self.assertNotIn(delegato_nazionale_no_6, elenco)
         # Rubrica delegati obiettivo 6 per il delegato provinciale firenze
-        elenco = _rubrica_delegati(delegato_firenze, DELEGATO_OBIETTIVO_6).risultati()
+        elenco = _rubrica_delegati(delegato_firenze, DELEGATO_OBIETTIVO_6)[0].risultati()
         self.assertEqual(1, len(elenco))
         self.assertNotIn(delegato_nazionale, elenco)
         self.assertNotIn(delegato_toscana, elenco)
@@ -817,7 +817,7 @@ class TestAnagrafica(TestCase):
         self.assertNotIn(delegato_firenze_no_6, elenco)
         self.assertNotIn(delegato_nazionale_no_6, elenco)
         # Rubrica delegati obiettivo 6 per il delegato locale
-        elenco = _rubrica_delegati(delegato_empoli, DELEGATO_OBIETTIVO_6).risultati()
+        elenco = _rubrica_delegati(delegato_empoli, DELEGATO_OBIETTIVO_6)[0].risultati()
         self.assertEqual(1, len(elenco))
         self.assertNotIn(delegato_nazionale, elenco)
         self.assertNotIn(delegato_toscana, elenco)
@@ -830,7 +830,7 @@ class TestAnagrafica(TestCase):
         self.assertNotIn(delegato_firenze_no_6, elenco)
         self.assertNotIn(delegato_nazionale_no_6, elenco)
         # Rubrica delegati obiettivo 6 per il delegato territoriale
-        elenco = _rubrica_delegati(delegato_dicomano, DELEGATO_OBIETTIVO_6).risultati()
+        elenco = _rubrica_delegati(delegato_dicomano, DELEGATO_OBIETTIVO_6)[0].risultati()
         self.assertEqual(0, len(elenco))
         self.assertNotIn(delegato_nazionale, elenco)
         self.assertNotIn(delegato_toscana, elenco)
@@ -843,7 +843,7 @@ class TestAnagrafica(TestCase):
         self.assertNotIn(delegato_firenze_no_6, elenco)
         self.assertNotIn(delegato_nazionale_no_6, elenco)
         # Rubrica delegati obiettivo 6 per il delegato territoriale
-        elenco = _rubrica_delegati(delegato_territorio_empoli, DELEGATO_OBIETTIVO_6).risultati()
+        elenco = _rubrica_delegati(delegato_territorio_empoli, DELEGATO_OBIETTIVO_6)[0].risultati()
         self.assertEqual(0, len(elenco))
         self.assertNotIn(delegato_nazionale, elenco)
         self.assertNotIn(delegato_toscana, elenco)
