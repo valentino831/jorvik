@@ -509,7 +509,7 @@ def _rubrica_delegati(me, delega):
         elenco = ElencoDelegati(sedi_destinatari, [delega], me)
     else:
         elenco = ElencoGiovani(sedi_destinatari, me)
-    return elenco
+    return elenco, sedi_delega
 
 
 @pagina_privata
@@ -518,11 +518,12 @@ def rubrica_delegati(request, me, delega):
         return redirect('/utente/')
 
     delega, titolo = DELEGHE_INFORMAZIONI[delega]
-    elenco = _rubrica_delegati(me, delega)
+    elenco, sedi_delega = _rubrica_delegati(me, delega)
 
     contesto = {
         "elenco": elenco,
-        "elenco_nome": "Rubrica {}".format(titolo)
+        "elenco_nome": "Rubrica {}".format(titolo),
+        "sedi": sedi_delega
     }
     return 'anagrafica_delegato_rubrica_delegati.html', contesto
 

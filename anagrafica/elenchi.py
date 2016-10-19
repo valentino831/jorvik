@@ -6,6 +6,9 @@ from anagrafica.models import Persona, Delega, Sede
 
 class ElencoDelegati(ElencoVistaAnagrafica):
 
+    def template(self):
+        return 'anagrafica_elenchi_delegati.html'
+
     def risultati(self):
         qs_sedi = self.args[0]
         qs_deleghe = self.args[1]

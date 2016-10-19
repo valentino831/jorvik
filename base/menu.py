@@ -27,10 +27,11 @@ def menu(request):
 
     me = request.me if hasattr(request, 'me') else None
 
-
     sedi_deleghe_attuali = me.sedi_deleghe_attuali().exclude(estensione=TERRITORIALE) if me else None
     deleghe_attuali = None
+
     if me:
+        sedi_deleghe_attuali = [sede.pk for sede in sedi_deleghe_attuali if sede.comitati_sottostanti().exists()]
         deleghe_attuali = me.deleghe_attuali(
             oggetto_tipo=ContentType.objects.get_for_model(Sede),
             oggetto_id__in=sedi_deleghe_attuali
