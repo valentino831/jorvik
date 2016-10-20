@@ -1847,7 +1847,7 @@ class Trasferimento(ModelloSemplice, ConMarcaTemporale, ConAutorizzazioni, ConPD
     def autorizzazione_concessa(self, modulo=None, auto=False):
         if auto:
             self.protocollo_data = timezone.now()
-            self.protocollo_numero = 'AUTO'
+            self.protocollo_numero = ''
         else:
             self.protocollo_data = modulo.cleaned_data['protocollo_data']
             self.protocollo_numero = modulo.cleaned_data['protocollo_numero']
@@ -1940,7 +1940,7 @@ class Estensione(ModelloSemplice, ConMarcaTemporale, ConAutorizzazioni, ConPDF):
     def autorizzazione_concessa(self, modulo=None, auto=False):
         if auto:
             self.protocollo_data = timezone.now()
-            self.protocollo_numero = 'AUTO'
+            self.protocollo_numero = ''
         else:
             self.protocollo_data = modulo.cleaned_data['protocollo_data']
             self.protocollo_numero = modulo.cleaned_data['protocollo_numero']
