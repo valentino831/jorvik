@@ -14,6 +14,7 @@ Questo modulo definisce i modelli del modulo anagrafico di Gaia.
 from datetime import date, timedelta, datetime
 
 import stdnum
+from django.conf import settings
 from django.utils import timezone
 
 import codicefiscale
@@ -1240,7 +1241,7 @@ class Appartenenza(ModelloSemplice, ConStorico, ConMarcaTemporale, ConAutorizzaz
             forza_sede_riferimento=self.sede,
         )
 
-    def autorizzazione_concessa(self, modulo=None):
+    def autorizzazione_concessa(self, modulo=None, auto=False):
         """
         Questo metodo viene chiamato quando la richiesta viene accettata.
         :return:
@@ -1843,12 +1844,15 @@ class Trasferimento(ModelloSemplice, ConMarcaTemporale, ConAutorizzazioni, ConPD
         from anagrafica.forms import ModuloConsentiTrasferimento
         return ModuloConsentiTrasferimento
 
-    def autorizzazione_concessa(self, modulo=None):
-        self.protocollo_data = modulo.cleaned_data['protocollo_data']
-        self.protocollo_numero = modulo.cleaned_data['protocollo_numero']
+    def autorizzazione_concessa(self, modulo=None, auto=False):
+        if auto:
+            self.protocollo_data = timezone.now()
+            self.protocollo_numero = 'AUTO'
+        else:
+            self.protocollo_data = modulo.cleaned_data['protocollo_data']
+            self.protocollo_numero = modulo.cleaned_data['protocollo_numero']
         self.save()
         self.esegui()
-
 
     def esegui(self):
         appartenenzaVecchia = Appartenenza.objects.filter(Appartenenza.query_attuale().q,
@@ -1875,7 +1879,9 @@ class Trasferimento(ModelloSemplice, ConMarcaTemporale, ConAutorizzazioni, ConPD
         self.autorizzazione_richiedi_sede_riferimento(
             self.persona,
             INCARICO_GESTIONE_TRASFERIMENTI,
-            invia_notifica_presidente=True
+            invia_notifica_presidente=True,
+            auto=Autorizzazione.AP_AUTO,
+            scadenza=settings.AUTORIZZAZIONE_AUTOMATICA,
         )
 
     def url(self):
@@ -1931,9 +1937,13 @@ class Estensione(ModelloSemplice, ConMarcaTemporale, ConAutorizzazioni, ConPDF):
         from anagrafica.forms import ModuloNegaEstensione
         return ModuloNegaEstensione
 
-    def autorizzazione_concessa(self, modulo=None):
-        self.protocollo_data = modulo.cleaned_data['protocollo_data']
-        self.protocollo_numero = modulo.cleaned_data['protocollo_numero']
+    def autorizzazione_concessa(self, modulo=None, auto=False):
+        if auto:
+            self.protocollo_data = timezone.now()
+            self.protocollo_numero = 'AUTO'
+        else:
+            self.protocollo_data = modulo.cleaned_data['protocollo_data']
+            self.protocollo_numero = modulo.cleaned_data['protocollo_numero']
         app = Appartenenza(
             membro=Appartenenza.ESTESO,
             persona=self.persona,
@@ -1953,7 +1963,9 @@ class Estensione(ModelloSemplice, ConMarcaTemporale, ConAutorizzazioni, ConPDF):
         self.autorizzazione_richiedi_sede_riferimento(
             self.persona,
             INCARICO_GESTIONE_ESTENSIONI,
-            invia_notifica_presidente=True
+            invia_notifica_presidente=True,
+            auto=Autorizzazione.AP_AUTO,
+            scadenza=settings.AUTORIZZAZIONE_AUTOMATICA,
         )
         if self.destinazione.presidente():
             Messaggio.costruisci_e_invia(
@@ -2024,14 +2036,18 @@ class Riserva(ModelloSemplice, ConMarcaTemporale, ConStorico, ConProtocollo,
         from anagrafica.forms import ModuloConsentiRiserva
         return ModuloConsentiRiserva
 
-    def autorizzazione_concessa(self, modulo=None):
-        self.protocollo_data = modulo.cleaned_data['protocollo_data']
-        self.protocollo_numero = modulo.cleaned_data['protocollo_numero']
+    def autorizzazione_concessa(self, modulo=None, auto=False):
+        if auto:
+            self.protocollo_data = timezone.now()
+            self.protocollo_numero = 'AUTO'
+        else:
+            self.protocollo_data = modulo.cleaned_data['protocollo_data']
+            self.protocollo_numero = modulo.cleaned_data['protocollo_numero']
+        self.save()
 
     def termina(self):
         self.fine = poco_fa()
         self.save()
-
 
     def invia_mail(self):
 
