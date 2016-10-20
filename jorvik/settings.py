@@ -4,6 +4,7 @@ Queste sono le impostazioni di Django per il progetto Jorvik.
 Informazioni sul file:  https://docs.djangoproject.com/en/1.7/topics/settings/
 Documentazione config.: https://docs.djangoproject.com/en/1.7/ref/settings/
 """
+from django.core.urlresolvers import reverse_lazy
 
 try:
     import configparser
@@ -11,6 +12,8 @@ except ImportError:
     import ConfigParser as configparser
 
 import os
+
+from datetime import timedelta
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
@@ -61,6 +64,12 @@ INSTALLED_APPS = [
     'filer',
     'ckeditor',
     'ckeditor_filebrowser_filer',
+
+    'django_otp',
+    'django_otp.plugins.otp_static',
+    'django_otp.plugins.otp_totp',
+    'otp_yubikey',
+    'two_factor',
 ]
 
 
@@ -74,6 +83,7 @@ STATICFILES_FINDERS = (
 CRON_CLASSES = [
     "posta.cron.CronSmaltisciCodaPosta",
     "base.cron.CronCancellaFileScaduti",
+    "base.cron.CronApprovaNegaAuto",
     "anagrafica.cron.CronReportComitati",
 ]
 
@@ -84,8 +94,11 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.auth.middleware.SessionAuthenticationMiddleware',
+    'django_otp.middleware.OTPMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'two_factor.middleware.threadlocals.ThreadLocals',
+    'autenticazione.two_factor.middleware.Require2FA',
 )
 
 # Imposta anagrafica.Utenza come modello di autenticazione
@@ -156,11 +169,15 @@ SITE_ID = 1
 # File statici (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.7/howto/static-files/
 
-
-
-LOGIN_URL = '/login/'
+LOGIN_URL = reverse_lazy('two_factor:login')
 LOGOUT_URL = '/logout/'
 LOGIN_REDIRECT_URL = '/utente/'
+TWO_FACTOR_PROFILE = reverse_lazy('two_factor:profile')
+TWO_FACTOR_SESSIONE_SCADUTA = '/scaduta/'
+TWO_FACTOR_PUBLIC = (
+    TWO_FACTOR_PROFILE, LOGOUT_URL, TWO_FACTOR_SESSIONE_SCADUTA, LOGIN_URL
+)
+TWO_FACTOR_SESSION_DURATA = 120
 SESSION_COOKIE_PATH = '/'
 
 # Driver per i test funzionali
@@ -180,6 +197,8 @@ EMAIL_USE_TLS = EMAIL_CONF.getboolean('email', 'tls')
 EMAIL_SSL_KEYFILE = EMAIL_CONF.get('email', 'ssl_keyfile')
 EMAIL_SSL_CERTFILE = EMAIL_CONF.get('email', 'ssl_certfile')
 
+POSTA_LOG_DEBUG = EMAIL_CONF.getboolean('email', 'log_debug', fallback=True)
+
 DEFAULT_FROM_EMAIL = 'Gaia <noreply@gaia.cri.it>'
 GRAVATAR_DEFAULT_IMAGE = 'identicon'
 
@@ -196,6 +215,8 @@ DEBUG_CONF = configparser.ConfigParser()
 DEBUG_CONF.read(DEBUG_CONF_FILE)
 DEBUG = DEBUG_CONF.getboolean('debug', 'debug')
 SECRET_KEY = DEBUG_CONF.get('production', 'secret_key')
+JORVIK_LOG_FILE = DEBUG_CONF.get('debug', 'debug_log', fallback=os.path.join('..', 'log', 'debug.log'))
+JORVIK_LOG = os.path.join(BASE_DIR, JORVIK_LOG_FILE)
 
 host = "%s" % (DEBUG_CONF.get('production', 'host'),)
 www_host = "www.%s" % (host,)
@@ -209,6 +230,44 @@ DOMPDF_ENDPOINT = APIS_CONF.get('dompdf', 'endpoint',
                                 fallback='http://pdf-server.alacriter.uk.92-222-162-128.alacriter.uk/render/www/render.php')
 
 DESTINATARI_REPORT = ['sviluppo@cri.it', 'info@gaia.cri.it']
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s %(asctime)s %(module)s %(process)d %(thread)d %(message)s'
+        },
+        'simple': {
+            'format': '%(levelname)s %(message)s'
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': JORVIK_LOG,
+        },
+    },
+    'loggers': {
+        'posta.models': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'two_factor': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        }
+    }
+}
+
 
 TEMPLATES = [
     {
@@ -283,6 +342,8 @@ FILER_ALLOW_REGULAR_USERS_TO_ADD_ROOT_FOLDERS = True
 
 NORECAPTCHA_SITE_KEY = APIS_CONF.get('nocaptcha', 'site_key', fallback=os.environ.get('NORECAPTCHA_SECRET_KEY'))
 NORECAPTCHA_SECRET_KEY = APIS_CONF.get('nocaptcha', 'secret_key', fallback=os.environ.get('NORECAPTCHA_SITE_KEY'))
+
+AUTORIZZAZIONE_AUTOMATICA = timedelta(days=30)
 
 if os.environ.get('ENABLE_TEST_APPS', False):
     INSTALLED_APPS.append('segmenti.segmenti_test')
