@@ -1,6 +1,6 @@
 from django.contrib.contenttypes.models import ContentType
 
-from anagrafica.costanti import REGIONALE, TERRITORIALE
+from anagrafica.costanti import REGIONALE, TERRITORIALE, LOCALE
 from anagrafica.models import Sede
 from anagrafica.permessi.applicazioni import DELEGATO_OBIETTIVO_1, DELEGATO_OBIETTIVO_2, DELEGATO_OBIETTIVO_3, DELEGATO_OBIETTIVO_4, \
     DELEGATO_OBIETTIVO_5, DELEGATO_OBIETTIVO_6, PRESIDENTE, \
@@ -27,15 +27,24 @@ def menu(request):
 
     me = request.me if hasattr(request, 'me') else None
 
-    sedi_deleghe_attuali = me.sedi_deleghe_attuali().exclude(estensione=TERRITORIALE) if me else None
     deleghe_attuali = None
 
     if me:
-        sedi_deleghe_attuali = [sede.pk for sede in sedi_deleghe_attuali if sede.comitati_sottostanti().exists()]
-        deleghe_attuali = me.deleghe_attuali(
+        deleghe_normali = me.deleghe_attuali().exclude(tipo=PRESIDENTE)
+        sedi_deleghe_normali = me.sedi_deleghe_attuali(deleghe=deleghe_normali).exclude(estensione=TERRITORIALE) if me else Sede.objects.none()
+        deleghe_normali = me.deleghe_attuali(
             oggetto_tipo=ContentType.objects.get_for_model(Sede),
-            oggetto_id__in=sedi_deleghe_attuali
+            oggetto_id__in=sedi_deleghe_normali
+        ).exclude(tipo=PRESIDENTE).distinct().values_list('tipo', flat=True)
+        presidente = me.deleghe_attuali(tipo=PRESIDENTE)
+        sedi_deleghe_presidente = me.sedi_deleghe_attuali(deleghe=presidente).exclude(estensione__in=(LOCALE, TERRITORIALE)) if me else Sede.objects.none()
+        deleghe_presidente = me.deleghe_attuali(
+            oggetto_tipo=ContentType.objects.get_for_model(Sede),
+            oggetto_id__in=sedi_deleghe_presidente,
+            tipo=PRESIDENTE
         ).distinct().values_list('tipo', flat=True)
+        deleghe_attuali = deleghe_normali | deleghe_presidente
+
 
     gestione_corsi_sede = me.ha_permesso(GESTIONE_CORSI_SEDE) if me else False
 
@@ -51,7 +60,6 @@ def menu(request):
                 RUBRICA_BASE.append(
                     (titolo, "fa-book", "".join(("/utente/rubrica/", slug, '/')))
                 )
-
 
     VOCE_RUBRICA = ("Rubrica", (
         RUBRICA_BASE

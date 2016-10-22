@@ -1059,7 +1059,7 @@ class TestFunzionaliAnagrafica(TestFunzionale):
         veneto = crea_sede(estensione=REGIONALE, genitore=italia)
         abruzzo = crea_sede(estensione=REGIONALE, genitore=italia)
         emilia_romagna = crea_sede(estensione=REGIONALE, genitore=italia)
-        firenze = crea_sede(estensione=PROVINCIALE, genitore=toscana)
+        firenze = crea_sede(estensione=LOCALE, genitore=toscana)
         dicomano = crea_sede(estensione=TERRITORIALE, genitore=firenze)
         empoli = crea_sede(estensione=LOCALE, genitore=toscana)
         territorio_empoli = crea_sede(estensione=TERRITORIALE, genitore=empoli)
