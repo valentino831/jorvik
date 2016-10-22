@@ -506,9 +506,9 @@ def _rubrica_delegati(me, delega):
     for sede in sedi_delega:
         sedi_destinatari.extend(sede.espandi(includi_me=True, pubblici=True).values_list('pk', flat=True))
     if delega != DELEGATO_OBIETTIVO_5:
-        elenco = ElencoDelegati(sedi_destinatari, [delega], me)
+        elenco = ElencoDelegati(sedi_destinatari, deleghe=[delega], me_id=me.pk)
     else:
-        elenco = ElencoGiovani(sedi_destinatari, me)
+        elenco = ElencoGiovani(sedi_destinatari, me_id=me.pk)
     return elenco, sedi_delega
 
 
