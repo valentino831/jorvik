@@ -451,7 +451,6 @@ class TestAnagrafica(TestCase):
             msg="Esiste solo una appartenenza attuale come sostenitore."
         )
 
-    #@skipIf(not GOOGLE_KEY, "Nessuna chiave API Google per testare la ricerca su Maps.")
     def test_storia_volontario(self):
         presidente1 = crea_persona()
         presidente2 = crea_persona()
@@ -631,7 +630,6 @@ class TestAnagrafica(TestCase):
 
         aut.nega(presidente1, modulo=ModuloNegaEstensione({"motivo": "Un motivo qualsiasi"}))
 
-
         est.refresh_from_db()
         self.assertFalse(
             est.appartenenza is not None,
@@ -660,6 +658,12 @@ class TestAnagrafica(TestCase):
         da_estendere, sede1, app1 = crea_persona_sede_appartenenza(presidente1)
         da_estendere.email_contatto = email_fittizzia()
         da_estendere.save()
+
+        ufficio_soci = crea_persona()
+        ufficio_soci.email_contatto = email_fittizzia()
+        ufficio_soci.save()
+        crea_appartenenza(ufficio_soci, sede1)
+        Delega.objects.create(persona=ufficio_soci, tipo=UFFICIO_SOCI, oggetto=sede1, inizio=poco_fa())
 
         sede2 = crea_sede(presidente2)
 
@@ -706,12 +710,18 @@ class TestAnagrafica(TestCase):
         Autorizzazione.gestisci_automatiche()
         autorizzazione.refresh_from_db()
 
-        self.assertEqual(3, len(mail.outbox))
-
-        # Notifica alla persona estesa
-        email = mail.outbox[2]
-        self.assertTrue(email.subject.find('Richiesta di Estensione APPROVATA') > -1)
-        self.assertTrue(da_estendere.email_contatto in email.to)
+        self.assertEqual(5, len(mail.outbox))
+        destinatari_verificati = 0
+        for email in mail.outbox[2:]:
+            if da_estendere.email_contatto in email.to:
+                # Notifica alla persona estesa
+                self.assertTrue(email.subject.find('Richiesta di Estensione APPROVATA') > -1)
+                destinatari_verificati += 1
+            elif presidente1.email_contatto in email.to or ufficio_soci.email_contatto in email.to:
+                # Notifica presidente e ufficio soci in uscita
+                self.assertTrue(email.subject.find('Richiesta di Estensione da %s APPROVATA' % da_estendere.nome_completo) > -1)
+                destinatari_verificati += 1
+        self.assertEqual(destinatari_verificati, 3)
 
         self.assertEqual(autorizzazione.concessa, True)
         self.assertTrue(autorizzazione.oggetto.automatica)
@@ -731,6 +741,12 @@ class TestAnagrafica(TestCase):
         da_trasferire, sede1, app1 = crea_persona_sede_appartenenza(presidente1)
         da_trasferire.email_contatto = email_fittizzia()
         da_trasferire.save()
+
+        ufficio_soci = crea_persona()
+        ufficio_soci.email_contatto = email_fittizzia()
+        ufficio_soci.save()
+        crea_appartenenza(ufficio_soci, sede1)
+        Delega.objects.create(persona=ufficio_soci, tipo=UFFICIO_SOCI, oggetto=sede1, inizio=poco_fa())
 
         sede2 = crea_sede(presidente2)
 
@@ -773,12 +789,19 @@ class TestAnagrafica(TestCase):
         Autorizzazione.gestisci_automatiche()
         autorizzazione.refresh_from_db()
 
-        self.assertEqual(2, len(mail.outbox))
-
-        # Notifica alla persona trasfesa
-        email = mail.outbox[1]
-        self.assertTrue(email.subject.find('Richiesta di trasferimento APPROVATA') > -1)
-        self.assertTrue(da_trasferire.email_contatto in email.to)
+        self.assertEqual(4, len(mail.outbox))
+        destinatari_verificati = 0
+        for email in mail.outbox[1:]:
+            if da_trasferire.email_contatto in email.to:
+                # Notifica alla persona estesa
+                self.assertTrue(email.subject.find('Richiesta di trasferimento APPROVATA') > -1)
+                destinatari_verificati += 1
+            elif presidente1.email_contatto in email.to or ufficio_soci.email_contatto in email.to:
+                # Notifica presidente e ufficio soci in uscita
+                self.assertTrue(email.subject.find('Richiesta di trasferimento da %s APPROVATA' % da_trasferire.nome_completo) > -1)
+                self.assertTrue(email.body.find('articolo 9.5 del "Regolamento') > -1)
+                destinatari_verificati += 1
+        self.assertEqual(destinatari_verificati, 3)
 
         self.assertEqual(autorizzazione.concessa, True)
         self.assertTrue(autorizzazione.oggetto.automatica)
