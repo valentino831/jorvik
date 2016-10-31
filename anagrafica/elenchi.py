@@ -6,10 +6,13 @@ from anagrafica.models import Persona, Delega, Sede
 
 class ElencoDelegati(ElencoVistaAnagrafica):
 
+    def template(self):
+        return 'anagrafica_elenchi_delegati.html'
+
     def risultati(self):
         qs_sedi = self.args[0]
-        qs_deleghe = self.args[1]
-        me = self.args[2]
+        qs_deleghe = self.kwargs['deleghe']
+        me = self.kwargs['me_id']
 
         delegati = Persona.objects.filter(
             Delega.query_attuale(
@@ -17,7 +20,7 @@ class ElencoDelegati(ElencoVistaAnagrafica):
                 oggetto_id__in=qs_sedi,
                 tipo__in=qs_deleghe
             ).via("delega")
-        ).exclude(pk=me.pk).order_by('nome', 'cognome', 'codice_fiscale')\
+        ).exclude(pk=me).order_by('nome', 'cognome', 'codice_fiscale')\
             .distinct('nome', 'cognome', 'codice_fiscale')
         return delegati
 
@@ -25,5 +28,5 @@ class ElencoDelegati(ElencoVistaAnagrafica):
 class ElencoGiovani(ElencoVolontariGiovani):
 
     def risultati(self):
-        me = self.args[1]
-        return super(ElencoGiovani, self).risultati().exclude(pk=me.pk)
+        me = self.kwargs['me_id']
+        return super(ElencoGiovani, self).risultati().exclude(pk=me)
