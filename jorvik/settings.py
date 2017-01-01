@@ -222,6 +222,9 @@ SECRET_KEY = DEBUG_CONF.get('production', 'secret_key')
 JORVIK_LOG_FILE = DEBUG_CONF.get('debug', 'debug_log', fallback=os.path.join('..', 'log', 'debug.log'))
 JORVIK_LOG = os.path.join(BASE_DIR, JORVIK_LOG_FILE)
 
+# Driver per i test funzionali
+DRIVER_WEB = DEBUG_CONF.get('test', 'driver', fallback='firefox')
+
 host = "%s" % (DEBUG_CONF.get('production', 'host'),)
 www_host = "www.%s" % (host,)
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', host, www_host]

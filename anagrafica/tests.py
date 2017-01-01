@@ -3,8 +3,10 @@ from unittest import skipIf
 
 import re
 from django.core import mail
+from django.test import Client
 from django.test import TestCase
 from django.utils import timezone
+from freezegun import freeze_time
 from lxml import html
 
 from anagrafica.costanti import LOCALE, PROVINCIALE, REGIONALE, NAZIONALE, TERRITORIALE
@@ -457,6 +459,8 @@ class TestAnagrafica(TestCase):
             msg="Esiste solo una appartenenza attuale come sostenitore."
         )
 
+    #@skipIf(not GOOGLE_KEY, "Nessuna chiave API Google per testare la ricerca su Maps.")
+    @freeze_time('2016-11-14')
     def test_storia_volontario(self):
         presidente1 = crea_persona()
         presidente2 = crea_persona()
@@ -1479,3 +1483,12 @@ class TestFunzionaliAnagrafica(TestFunzionale):
         self.assertTrue(sessione_delegato_dicomano.is_text_present("Referenti"))
         self.assertTrue(sessione_delegato_dicomano.is_text_present("Volontari"))
         self.assertFalse(sessione_delegato_dicomano.is_text_present("Delegati Obiettivo III (Emergenze)"))
+
+    def test_registrazione_non_valida(self):
+
+        client = Client()
+        response = client.get('/registrati/aspirante/anagrafica/?code=random_str')
+        self.assertContains(response, 'Errore nel processo di registrazione.')
+
+        response = client.get('/registrati/aspirante/anagrafica/?code=random_str&registration=random_session')
+        self.assertContains(response, 'Errore nel processo di registrazione.')
