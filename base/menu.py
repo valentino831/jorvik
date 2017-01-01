@@ -6,7 +6,7 @@ from anagrafica.permessi.applicazioni import DELEGATO_OBIETTIVO_1, DELEGATO_OBIE
     DELEGATO_OBIETTIVO_5, DELEGATO_OBIETTIVO_6, PRESIDENTE, \
     UFFICIO_SOCI, UFFICIO_SOCI_UNITA, DELEGATO_AREA, RESPONSABILE_AREA, \
     REFERENTE, RESPONSABILE_FORMAZIONE, DIRETTORE_CORSO, \
-    RESPONSABILE_AUTOPARCO, DELEGATO_CO, REFERENTE_GRUPPO, DELEGHE_INFORMAZIONI
+    RESPONSABILE_AUTOPARCO, DELEGATO_CO, REFERENTE_GRUPPO, RUBRICHE_TITOLI
 from anagrafica.permessi.costanti import GESTIONE_CORSI_SEDE, GESTIONE_ATTIVITA, GESTIONE_ATTIVITA_AREA, ELENCHI_SOCI, \
     GESTIONE_AREE_SEDE, GESTIONE_ATTIVITA_SEDE, EMISSIONE_TESSERINI, GESTIONE_POTERI_CENTRALE_OPERATIVA_SEDE
 from base.utils import remove_none
@@ -31,19 +31,16 @@ def menu(request):
 
     if me:
         deleghe_normali = me.deleghe_attuali().exclude(tipo=PRESIDENTE)
-        sedi_deleghe_normali = me.sedi_deleghe_attuali(deleghe=deleghe_normali).exclude(estensione=TERRITORIALE) if me else Sede.objects.none()
-        deleghe_normali = me.deleghe_attuali(
-            oggetto_tipo=ContentType.objects.get_for_model(Sede),
-            oggetto_id__in=sedi_deleghe_normali
-        ).exclude(tipo=PRESIDENTE).distinct().values_list('tipo', flat=True)
+        sedi_deleghe_normali = me.sedi_deleghe_attuali(deleghe=deleghe_normali) if me else Sede.objects.none()
+        sedi_deleghe_normali = [sede.pk for sede in sedi_deleghe_normali if sede.comitati_sottostanti().exists() or sede.unita_sottostanti().exists()]
         presidente = me.deleghe_attuali(tipo=PRESIDENTE)
         sedi_deleghe_presidente = me.sedi_deleghe_attuali(deleghe=presidente).exclude(estensione__in=(LOCALE, TERRITORIALE)) if me else Sede.objects.none()
-        deleghe_presidente = me.deleghe_attuali(
+        sedi_deleghe_presidente = [sede.pk for sede in sedi_deleghe_presidente if sede.comitati_sottostanti().exists()]
+        sedi = sedi_deleghe_normali + sedi_deleghe_presidente
+        deleghe_attuali = me.deleghe_attuali(
             oggetto_tipo=ContentType.objects.get_for_model(Sede),
-            oggetto_id__in=sedi_deleghe_presidente,
-            tipo=PRESIDENTE
+            oggetto_id__in=sedi
         ).distinct().values_list('tipo', flat=True)
-        deleghe_attuali = deleghe_normali | deleghe_presidente
 
 
     gestione_corsi_sede = me.ha_permesso(GESTIONE_CORSI_SEDE) if me else False
@@ -54,7 +51,7 @@ def menu(request):
     ]
 
     if deleghe_attuali:
-        for slug, informazioni in DELEGHE_INFORMAZIONI.items():
+        for slug, informazioni in RUBRICHE_TITOLI.items():
             delega, titolo = informazioni
             if delega in deleghe_attuali:
                 RUBRICA_BASE.append(

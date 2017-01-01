@@ -59,7 +59,7 @@ DELEGHE_RUBRICA = (
 
 PERMESSI_NOMI_DICT = dict(PERMESSI_NOMI)
 
-DELEGHE_INFORMAZIONI = OrderedDict((
+RUBRICHE_TITOLI = OrderedDict((
     ('presidenti', (PRESIDENTE, 'Presidenti')),
     ('delegati_us', (UFFICIO_SOCI, 'Delegati Ufficio Soci')),
     ('delegati_us_unita', (UFFICIO_SOCI_UNITA, 'Delegati Ufficio Soci Unità Territoriale')),

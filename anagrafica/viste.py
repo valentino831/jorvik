@@ -36,9 +36,15 @@ from anagrafica.models import Persona, Documento, Telefono, Estensione, Delega, 
 from anagrafica.permessi.applicazioni import PRESIDENTE, UFFICIO_SOCI, PERMESSI_NOMI_DICT, DELEGATO_OBIETTIVO_1, \
     DELEGATO_OBIETTIVO_2, DELEGATO_OBIETTIVO_3, DELEGATO_OBIETTIVO_4, DELEGATO_OBIETTIVO_5, DELEGATO_OBIETTIVO_6, \
     RESPONSABILE_FORMAZIONE, RESPONSABILE_AUTOPARCO, DELEGATO_CO, UFFICIO_SOCI_UNITA, DELEGHE_RUBRICA, REFERENTE, \
-    RESPONSABILE_AREA, DIRETTORE_CORSO, DELEGATO_AREA, REFERENTE_GRUPPO, DELEGHE_INFORMAZIONI
+    RESPONSABILE_AREA, DIRETTORE_CORSO, DELEGATO_AREA, REFERENTE_GRUPPO, RUBRICHE_TITOLI
 from anagrafica.permessi.costanti import ERRORE_PERMESSI, COMPLETO, MODIFICA, LETTURA, GESTIONE_SEDE, GESTIONE, \
-    ELENCHI_SOCI, GESTIONE_ATTIVITA, GESTIONE_ATTIVITA_AREA, GESTIONE_CORSO
+    ELENCHI_SOCI, GESTIONE_ATTIVITA, GESTIONE_ATTIVITA_AREA, GESTIONE_CORSO, \
+    RUBRICA_UFFICIO_SOCI, RUBRICA_UFFICIO_SOCI_UNITA, \
+    RUBRICA_PRESIDENTI, RUBRICA_DELEGATI_AREA, RUBRICA_DELEGATI_OBIETTIVO_1, RUBRICA_DELEGATI_OBIETTIVO_2, \
+    RUBRICA_DELEGATI_OBIETTIVO_3, RUBRICA_DELEGATI_OBIETTIVO_4, RUBRICA_DELEGATI_OBIETTIVO_6, \
+    RUBRICA_DELEGATI_GIOVANI, RUBRICA_RESPONSABILI_AREA, RUBRICA_REFERENTI_ATTIVITA, \
+    RUBRICA_REFERENTI_GRUPPI, RUBRICA_CENTRALI_OPERATIVE, RUBRICA_RESPONSABILI_FORMAZIONE, \
+    RUBRICA_DIRETTORI_CORSI, RUBRICA_RESPONSABILI_AUTOPARCO
 from anagrafica.permessi.incarichi import INCARICO_GESTIONE_RISERVE, INCARICO_GESTIONE_TITOLI, \
     INCARICO_GESTIONE_FOTOTESSERE
 from anagrafica.utils import _conferma_email
@@ -610,24 +616,24 @@ def _rubrica_delegati(me, delega):
     deleghe = me.deleghe_attuali().filter(
         tipo=delega,
         oggetto_tipo=ContentType.objects.get_for_model(Sede),
-    ).values_list('pk', flat=True)
-    sedi_delega = me.sedi_deleghe_attuali().filter(deleghe__pk__in=deleghe)
-    sedi_destinatari = []
+    )
+    sedi_delega = me.sedi_deleghe_attuali(espandi=True, deleghe=deleghe)
+    sedi_complete = []
     for sede in sedi_delega:
-        sedi_destinatari.extend(sede.espandi(includi_me=True, pubblici=True).values_list('pk', flat=True))
+        sedi_complete.extend(sede.espandi(includi_me=True, pubblici=True).values_list('pk', flat=True))
     if delega != DELEGATO_OBIETTIVO_5:
-        elenco = ElencoDelegati(sedi_destinatari, deleghe=[delega], me_id=me.pk)
+        elenco = ElencoDelegati(sedi_complete, deleghe=[delega], me_id=me.pk)
     else:
-        elenco = ElencoGiovani(sedi_destinatari, me_id=me.pk)
+        elenco = ElencoGiovani(sedi_complete, me_id=me.pk)
     return elenco, sedi_delega
 
 
 @pagina_privata
-def rubrica_delegati(request, me, delega):
-    if delega not in DELEGHE_INFORMAZIONI:
+def rubrica_delegati(request, me, rubrica):
+    if rubrica not in RUBRICHE_TITOLI:
         return redirect('/utente/')
 
-    delega, titolo = DELEGHE_INFORMAZIONI[delega]
+    delega, titolo = RUBRICHE_TITOLI[rubrica]
     elenco, sedi_delega = _rubrica_delegati(me, delega)
 
     contesto = {

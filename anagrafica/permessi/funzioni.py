@@ -17,7 +17,13 @@ from anagrafica.permessi.applicazioni import REFERENTE
 from anagrafica.permessi.costanti import GESTIONE_SOCI, ELENCHI_SOCI, GESTIONE_ATTIVITA_SEDE, GESTIONE_CORSI_SEDE, \
     GESTIONE_SEDE, GESTIONE_ATTIVITA_AREA, GESTIONE_ATTIVITA, GESTIONE_CORSO, GESTIONE_AUTOPARCHI_SEDE, \
     GESTIONE_GRUPPI_SEDE, GESTIONE_GRUPPO, GESTIONE_AREE_SEDE, GESTIONE_REFERENTI_ATTIVITA, \
-    GESTIONE_CENTRALE_OPERATIVA_SEDE, EMISSIONE_TESSERINI, GESTIONE_POTERI_CENTRALE_OPERATIVA_SEDE
+    GESTIONE_CENTRALE_OPERATIVA_SEDE, EMISSIONE_TESSERINI, GESTIONE_POTERI_CENTRALE_OPERATIVA_SEDE, \
+    RUBRICA_UFFICIO_SOCI, RUBRICA_UFFICIO_SOCI_UNITA, \
+    RUBRICA_PRESIDENTI, RUBRICA_DELEGATI_AREA, RUBRICA_DELEGATI_OBIETTIVO_1, RUBRICA_DELEGATI_OBIETTIVO_2, \
+    RUBRICA_DELEGATI_OBIETTIVO_3, RUBRICA_DELEGATI_OBIETTIVO_4, RUBRICA_DELEGATI_OBIETTIVO_6, \
+    RUBRICA_DELEGATI_GIOVANI, RUBRICA_RESPONSABILI_AREA, RUBRICA_REFERENTI_ATTIVITA, \
+    RUBRICA_REFERENTI_GRUPPI, RUBRICA_CENTRALI_OPERATIVE, RUBRICA_RESPONSABILI_FORMAZIONE, \
+    RUBRICA_DIRETTORI_CORSI, RUBRICA_RESPONSABILI_AUTOPARCO
 
 
 def permessi_persona(persona):
@@ -64,7 +70,9 @@ def permessi_presidente(sede):
 
     sede_espansa = sede.espandi(includi_me=True)
     return [
+        (RUBRICA_PRESIDENTI,    sede.espandi(includi_me=True, pubblici=True)),
         (GESTIONE_SEDE,         sede_espansa),
+        (GESTIONE_GRUPPI_SEDE,  sede_espansa),
         (GESTIONE_GRUPPI_SEDE,  sede_espansa),
     ] \
         + permessi_ufficio_soci(sede) \
@@ -83,6 +91,7 @@ def permessi_ufficio_soci_unita(sede):
     """
     sede_qs = sede.queryset_modello()
     return [
+        (RUBRICA_UFFICIO_SOCI_UNITA, sede.espandi(includi_me=True, pubblici=True)),
         (GESTIONE_SOCI,     sede_qs),
         (ELENCHI_SOCI,      sede_qs),
     ]
@@ -97,6 +106,7 @@ def permessi_ufficio_soci(sede):
     """
     from anagrafica.costanti import REGIONALE
     return [
+        (RUBRICA_UFFICIO_SOCI,  sede.espandi(includi_me=True, pubblici=True)),
         (GESTIONE_SOCI,         sede.espandi(includi_me=True)),
         (ELENCHI_SOCI,          sede.espandi(includi_me=True, pubblici=True)),
         (EMISSIONE_TESSERINI,   sede.queryset_modello().filter(estensione=REGIONALE)),
@@ -115,6 +125,7 @@ def permessi_responsabile_attivita(sede):
     sede_espansa = sede.espandi(includi_me=True)
     attivita = Attivita.objects.filter(sede__in=sede_espansa)
     return [
+        (RUBRICA_REFERENTI_ATTIVITA,    sede.espandi(includi_me=True, pubblici=True)),
         (GESTIONE_ATTIVITA_SEDE,        sede_espansa),
         (GESTIONE_ATTIVITA_AREA,        Area.objects.filter(sede__in=sede_espansa)),
         (GESTIONE_REFERENTI_ATTIVITA,   attivita),
@@ -129,54 +140,48 @@ def permessi_delegato_obiettivo_1(sede):
     from attivita.models import Area
     sede_espansa = sede.espandi(includi_me=True)
     return [
-
-           ] + \
-           permessi_delegato_area(Area.objects.filter(sede__in=sede_espansa, obiettivo=1))
+        (RUBRICA_DELEGATI_OBIETTIVO_1, sede.espandi(includi_me=True, pubblici=True)),
+           ] + permessi_delegato_area(Area.objects.filter(sede__in=sede_espansa, obiettivo=1))
 
 
 def permessi_delegato_obiettivo_2(sede):
     from attivita.models import Area
     sede_espansa = sede.espandi(includi_me=True)
     return [
-
-           ] + \
-           permessi_delegato_area(Area.objects.filter(sede__in=sede_espansa, obiettivo=2))
+        (RUBRICA_DELEGATI_OBIETTIVO_2, sede.espandi(includi_me=True, pubblici=True)),
+           ] + permessi_delegato_area(Area.objects.filter(sede__in=sede_espansa, obiettivo=2))
 
 
 def permessi_delegato_obiettivo_3(sede):
     from attivita.models import Area
     sede_espansa = sede.espandi(includi_me=True)
     return [
-
-           ] + \
-           permessi_delegato_area(Area.objects.filter(sede__in=sede_espansa, obiettivo=3))
+        (RUBRICA_DELEGATI_OBIETTIVO_3, sede.espandi(includi_me=True, pubblici=True)),
+           ] + permessi_delegato_area(Area.objects.filter(sede__in=sede_espansa, obiettivo=3))
 
 
 def permessi_delegato_obiettivo_4(sede):
     from attivita.models import Area
     sede_espansa = sede.espandi(includi_me=True)
     return [
-
-           ] + \
-           permessi_delegato_area(Area.objects.filter(sede__in=sede_espansa, obiettivo=4))
+        (RUBRICA_DELEGATI_OBIETTIVO_4, sede.espandi(includi_me=True, pubblici=True)),
+           ] + permessi_delegato_area(Area.objects.filter(sede__in=sede_espansa, obiettivo=4))
 
 
 def permessi_delegato_obiettivo_5(sede):
     from attivita.models import Area
     sede_espansa = sede.espandi(includi_me=True)
     return [
-
-           ] + \
-           permessi_delegato_area(Area.objects.filter(sede__in=sede_espansa, obiettivo=5))
+        (RUBRICA_DELEGATI_GIOVANI, sede.espandi(includi_me=True, pubblici=True)),
+           ] + permessi_delegato_area(Area.objects.filter(sede__in=sede_espansa, obiettivo=5))
 
 
 def permessi_delegato_obiettivo_6(sede):
     from attivita.models import Area
     sede_espansa = sede.espandi(includi_me=True)
     return [
-
-           ] + \
-           permessi_delegato_area(Area.objects.filter(sede__in=sede_espansa, obiettivo=6))
+        (RUBRICA_DELEGATI_OBIETTIVO_6, sede.espandi(includi_me=True, pubblici=True)),
+           ] + permessi_delegato_area(Area.objects.filter(sede__in=sede_espansa, obiettivo=6))
 
 
 def permessi_referente_gruppo(gruppo):
@@ -186,8 +191,8 @@ def permessi_referente_gruppo(gruppo):
     :param gruppo: Gruppo di cui si e' referenti.
     :return: Lista di permessi.
     """
-    from gruppi.models import Gruppo
     return [
+        (RUBRICA_REFERENTI_GRUPPI,  gruppo.sede.espandi(includi_me=True, pubblici=True)),
         (GESTIONE_GRUPPO,           gruppo.queryset_modello())
     ]
 
@@ -199,10 +204,10 @@ def permessi_responsabile_formazione(sede):
     :param sede: Sede di cui si e' responsabile formazione.
     :return: Lista di permessi.
     """
-    from anagrafica.models import Sede
     from formazione.models import CorsoBase
     sede_espansa = sede.espandi(includi_me=True)
     return [
+        (RUBRICA_RESPONSABILI_FORMAZIONE, sede.espandi(includi_me=True, pubblici=True)),
         (GESTIONE_CORSI_SEDE,       sede_espansa),
         (GESTIONE_CORSO,            CorsoBase.objects.filter(sede__in=sede_espansa))
 
@@ -216,13 +221,16 @@ def permessi_delegato_area(area):
     :param area: L'area di cui si e' delegati
     :return: Lista di permessi.
     """
+    from anagrafica.models import Sede
     from attivita.models import Area, Attivita
     if isinstance(area, QuerySet):
         qs_area = area
     else:
         qs_area = area.queryset_modello()
+    sede = Sede.objects.filter(aree__in=qs_area)
     attivita = Attivita.objects.filter(area__in=qs_area)
     return [
+        (RUBRICA_DELEGATI_AREA,         sede),
         (GESTIONE_ATTIVITA_AREA,        qs_area),
         (GESTIONE_ATTIVITA,             attivita),
         (GESTIONE_REFERENTI_ATTIVITA,   attivita),
@@ -232,6 +240,7 @@ def permessi_delegato_area(area):
 def permessi_delegato_centrale_operativa(sede):
     sede_espansa = sede.espandi(includi_me=True)
     return [
+        (RUBRICA_CENTRALI_OPERATIVE, sede.espandi(includi_me=True, pubblici=True)),
         (GESTIONE_CENTRALE_OPERATIVA_SEDE,          sede_espansa),
         (GESTIONE_POTERI_CENTRALE_OPERATIVA_SEDE,   sede_espansa),
     ]
@@ -245,8 +254,8 @@ def permessi_responsabile_area(area):
     :return: Lista di permessi.
     """
     return [
-    ] \
-        + permessi_delegato_area(area)
+        (RUBRICA_RESPONSABILI_AREA, area.sede.espandi(includi_me=True, pubblici=True)),
+    ] + permessi_delegato_area(area)
 
 
 def permessi_referente(attivita):
@@ -258,6 +267,7 @@ def permessi_referente(attivita):
     """
     from attivita.models import Attivita
     return [
+        (RUBRICA_REFERENTI_ATTIVITA, attivita.sede.espandi(includi_me=True, pubblici=True)),
         (GESTIONE_ATTIVITA,         Attivita.objects.filter(pk=attivita.pk))
     ]
 
@@ -271,6 +281,7 @@ def permessi_direttore_corso(corso):
     """
     from formazione.models import CorsoBase
     return [
+        (RUBRICA_DIRETTORI_CORSI, corso.sede.espandi(includi_me=True, pubblici=True)),
         (GESTIONE_CORSO,         CorsoBase.objects.filter(pk=corso.pk))
     ]
 
@@ -283,6 +294,7 @@ def permessi_responsabile_autoparco(sede):
     :return: Lista di permessi.
     """
     return [
+        (RUBRICA_RESPONSABILI_AUTOPARCO,   sede.espandi(includi_me=True, pubblici=True)),
         (GESTIONE_AUTOPARCHI_SEDE,         sede.espandi(includi_me=True)),
     ]
 
