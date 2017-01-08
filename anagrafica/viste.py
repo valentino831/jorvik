@@ -943,7 +943,7 @@ def utente_trasferimento_termina(request, me, pk):
         trasferimento.ritira()
         return redirect('/utente/trasferimento/')
 
-def _trasferimenti_pending(me):
+def trasferimenti_pending(me):
 
     trasferimento = me.trasferimento
     trasferimenti_auto_pending = None
@@ -1015,7 +1015,7 @@ def utente_trasferimento(request, me):
                 ]
             )
 
-    trasferimenti_auto_pending, trasferimenti_manuali_pending, delegati = _trasferimenti_pending(me)
+    trasferimenti_auto_pending, trasferimenti_manuali_pending, delegati = trasferimenti_pending(me)
 
     contesto = {
         "modulo": modulo,
