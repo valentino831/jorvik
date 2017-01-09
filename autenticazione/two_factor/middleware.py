@@ -22,8 +22,10 @@ class Require2FA(MiddlewareMixin):
         request.user.save()
 
     def process_request(self, request):
+        if request.user.is_anonymous():
+            return
         # URL non soggette a nessun controllo perché view di servizio
-        urls = [request.path_info.startswith(resolve_url(url)) for url in settings.TWO_FACTOR_PUBLIC ]
+        urls = [request.path_info.startswith(resolve_url(url)) for url in settings.TWO_FACTOR_PUBLIC]
 
         # Se è richiesta la 2FA e non è attivata si forza l'utente ad attivarla
         if not any(urls) and request.user.is_authenticated() and request.user.richiedi_attivazione_2fa:
@@ -31,12 +33,13 @@ class Require2FA(MiddlewareMixin):
 
         # Controllo sulla durata della sessione per gli amministratori
         limite = now() - timedelta(seconds=settings.TWO_FACTOR_SESSION_DURATA*60)
-        if any(urls) and request.user.is_staff and request.user.richiedi_2fa:
-            self._aggiorna_ultima_azione(request)
+        # per tutte le altre pagine facciamo il check
         if not any(urls) and request.user.is_staff and request.user.richiedi_2fa:
             if request.user.ultima_azione and request.user.ultima_azione < limite:
+                # sessione scaduta -> si manda a pagina di avviso
                 return HttpResponseRedirect(settings.TWO_FACTOR_SESSIONE_SCADUTA)
-            else:
+            elif request.path_info != settings.TWO_FACTOR_SESSIONE_SCADUTA:
+                # si rinnova la sessione
                 self._aggiorna_ultima_azione(request)
 
     def process_response(self, request, response):
