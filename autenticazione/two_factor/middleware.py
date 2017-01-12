@@ -4,6 +4,7 @@ from __future__ import absolute_import, print_function, unicode_literals
 from datetime import timedelta
 
 from django.conf import settings
+from django.contrib.auth import logout
 from django.http import HttpResponseRedirect
 from django.shortcuts import resolve_url
 from django.utils.timezone import now
@@ -37,6 +38,7 @@ class Require2FA(MiddlewareMixin):
         if not any(urls) and request.user.is_staff and request.user.richiedi_2fa:
             if request.user.ultima_azione and request.user.ultima_azione < limite:
                 # sessione scaduta -> si manda a pagina di avviso
+                logout(request)
                 return HttpResponseRedirect(settings.TWO_FACTOR_SESSIONE_SCADUTA)
             elif request.path_info != settings.TWO_FACTOR_SESSIONE_SCADUTA:
                 # si rinnova la sessione
