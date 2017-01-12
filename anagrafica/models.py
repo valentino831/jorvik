@@ -795,6 +795,34 @@ class Persona(ModelloSemplice, ConMarcaTemporale, ConAllegati, ConVecchioID):
         """
         return self._autorizzazioni_in_attesa().order_by('creazione')
 
+    @cached_property
+    def trasferimenti_in_attesa(self):
+        """
+        Ritorna tutti i trasferimenti firmabili da qesto utente e in attesa di firma,
+        :return: QuerySet<Autorizzazione>
+        """
+        return self.autorizzazioni_in_attesa().filter(oggetto_tipo=ContentType.objects.get_for_model(Trasferimento))
+
+    @cached_property
+    def trasferimenti_automatici(self):
+        """
+        Ritorna tutti i trasferimenti firmabili da qesto utente e in attesa di firma, con approvazione automatica
+        :return: QuerySet<Autorizzazione>
+        """
+        return self.trasferimenti_in_attesa.filter(scadenza__isnull=False).exclude(tipo_gestione=Autorizzazione.MANUALE)
+
+    @cached_property
+    def trasferimenti_manuali(self):
+        """
+        Ritorna tutti i trasferimenti firmabili da qesto utente e in attesa di firma, senza approvazione automatica
+        :return: QuerySet<Autorizzazione>
+        """
+        return self.trasferimenti_in_attesa.filter(tipo_gestione=Autorizzazione.MANUALE)
+
+    @cached_property
+    def estensioni_da_autorizzare(self):
+        return self.autorizzazioni_in_attesa().filter(oggetto_tipo=ContentType.objects.get_for_model(Estensione))
+
     def deleghe_anagrafica(self):
         """
         Ritora un queryset di tutte le deleghe attuali alle persone che sono
@@ -1954,12 +1982,8 @@ class Estensione(ModelloSemplice, ConMarcaTemporale, ConAutorizzazioni, ConPDF):
         return ModuloNegaEstensione
 
     def autorizzazione_concessa(self, modulo=None, auto=False):
-        if auto:
-            self.protocollo_data = timezone.now()
-            self.protocollo_numero = Autorizzazione.PROTOCOLLO_AUTO
-        else:
-            self.protocollo_data = modulo.cleaned_data['protocollo_data']
-            self.protocollo_numero = modulo.cleaned_data['protocollo_numero']
+        self.protocollo_data = modulo.cleaned_data['protocollo_data']
+        self.protocollo_numero = modulo.cleaned_data['protocollo_numero']
         origine = self.persona.sede_riferimento()
         app = Appartenenza(
             membro=Appartenenza.ESTESO,
@@ -1981,8 +2005,7 @@ class Estensione(ModelloSemplice, ConMarcaTemporale, ConAutorizzazioni, ConPDF):
             self.persona,
             INCARICO_GESTIONE_ESTENSIONI,
             invia_notifica_presidente=True,
-            auto=Autorizzazione.AP_AUTO,
-            scadenza=self.APPROVAZIONE_AUTOMATICA,
+            auto=Autorizzazione.MANUALE,
         )
         if self.destinazione.presidente():
             Messaggio.costruisci_e_invia(

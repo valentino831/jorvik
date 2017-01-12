@@ -1,4 +1,6 @@
 import os
+
+from collections import defaultdict
 from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.core import urlresolvers
@@ -6,8 +8,10 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models import Q
 from django.utils.timezone import now
+from django.utils.functional import cached_property
 from django.forms import forms
 from mptt.models import MPTTModel, TreeForeignKey
+
 from anagrafica.permessi.applicazioni import PERMESSI_NOMI
 from anagrafica.permessi.costanti import MODIFICA
 from anagrafica.permessi.incarichi import INCARICHI, INCARICHI_TIPO_DICT
@@ -328,6 +332,51 @@ class Autorizzazione(ModelloSemplice, ConMarcaTemporale):
             autorizzazione.controlla_concedi_automatico()
 
 
+    @classmethod
+    def notifiche_richieste_in_attesa(cls):
+        from anagrafica.models import Estensione,  Trasferimento
+        from posta.models import Messaggio
+
+        oggetto = "Richieste in attesa di approvazione"
+        modello = "email_richieste_pending.html"
+
+        in_attesa = cls.objects.filter(
+            concessa__isnull=True
+        )
+        trasferimenti = in_attesa.filter(oggetto_tipo=ContentType.objects.get_for_model(Trasferimento))
+
+        estensioni = in_attesa.filter(oggetto_tipo=ContentType.objects.get_for_model(Estensione))
+        trasferimenti_manuali = trasferimenti.filter(scadenza__isnull=True, tipo_gestione=Autorizzazione.MANUALE)
+        trasferimenti_automatici = trasferimenti.filter(
+            scadenza__isnull=False, scadenza__gt=now().exclude(tipo_gestione=Autorizzazione.MANUALE)
+        )
+        autorizzazioni = estensioni + trasferimenti_manuali + trasferimenti_automatici
+
+        persone = defaultdict(defaultdict(list))
+        for autorizzazione in autorizzazioni:
+            destinatari = cls.espandi_notifiche(autorizzazione.destinatario_oggetto, [], True, True)
+            for destinatario in destinatari:
+                persone[destinatario.pk]['persona'] = destinatario
+                if autorizzazione in estensioni:
+                    persone[destinatario.pk]['estensioni'].append(autorizzazione)
+                if autorizzazione in trasferimenti_manuali:
+                    persone[destinatario.pk]['trasferimenti_manuali'].append(autorizzazione)
+                if autorizzazione in trasferimenti_automatici:
+                    persone[destinatario.pk]['trasferimenti_automatici'].append(autorizzazione)
+
+        for persona in persone.values():
+            corpo = {
+                "persona": persona,
+                "DATA_AVVIO_TRASFERIMENTI_AUTO": settings.DATA_AVVIO_TRASFERIMENTI_AUTO
+            }
+
+            Messaggio.costruisci_e_invia(
+                oggetto=oggetto,
+                modello=modello,
+                corpo=corpo,
+                destinatari=[persona]
+            )
+
 class Log(ModelloSemplice, ConMarcaTemporale):
 
     MODIFICA = 'M'
@@ -558,6 +607,21 @@ class ConAutorizzazioni(models.Model):
     def autorizzazioni(self):
         return self.autorizzazioni_set()
 
+    @cached_property
+    def autorizzazioni_automatiche(self):
+        return self.autorizzazioni.filter(scadenza__isnull=False).exclude(tipo_gestione=Autorizzazione.MANUALE)
+
+    @property
+    def con_scadenza(self):
+        return self.autorizzazioni_automatiche.exists()
+
+    @property
+    def data_scadenza(self):
+        try:
+            return (self.autorizzazioni_automatiche.earliest('scadenza').scadenza - now()).days
+        except:
+            return None
+
     def autorizzazioni_set(self):
         """
         Ottiene il queryset delle autorizzazioni associate.
@@ -643,7 +707,7 @@ class ConAutorizzazioni(models.Model):
             )
             r.save()
 
-            if auto:
+            if auto and auto != Autorizzazione.MANUALE:
                 r.automatizza(concedi=auto, scadenza=scadenza)
 
             if invia_notifiche:
